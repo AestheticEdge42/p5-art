@@ -1,7 +1,9 @@
 // Gen Brush Art 設定
 let imgNames = [
-  'https://media.discordapp.net/attachments/1158631151993368626/1316573608096829610/1.png?ex=675b8a38&is=675a38b8&hm=2dcf20c1ff78fe8a90d188fa2d41175b092b656caab7d8169cfca5b9ea6a5116&=&format=webp&quality=lossless&width=1251&height=701',
-  'https://media.discordapp.net/attachments/1158631151993368626/1316573606263656528/3.png?ex=675b8a38&is=675a38b8&hm=ca1bf3cdbec4c3f1d228e72301f63b53533c2bcc0490dc884d0c1c4fc8dff8c8&=&format=webp&quality=lossless&width=1251&height=701',
+  '1.png',
+  '2.png',
+  '3.png',
+  '4.png',
 ];
 let imgIndex = 0;
 let img;
