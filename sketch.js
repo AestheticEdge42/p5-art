@@ -1,9 +1,9 @@
 // Gen Brush Art 設定
 let imgNames = [
-  '1.png',
-  '2.png',
-  '3.png',
-  '4.png',
+  'images/1.png',
+  'images/2.png',
+  'images/3.png',
+  'images/4.png',
 ];
 let imgIndex = 0;
 let img;
@@ -123,8 +123,9 @@ function preload() {
     console.error('Failed to load the image.');
   });
 
-  logo = loadImage('Marelli_logo_BW_NEG_low.png');
-  font = loadFont('https://cdnjs.cloudflare.com/ajax/libs/topcoat/0.8.0/font/SourceCodePro-Regular.otf');
+  // ロゴとフォントのパスをローカルに修正
+  logo = loadImage('images/Marelli_logo_BW_NEG_low.png');
+  font = loadFont('fonts/SourceCodePro-Regular.otf');
 }
 
 function setup() {
@@ -231,7 +232,7 @@ function drawBrushArt() {
     let b = img.pixels[index + 2];
     let a = img.pixels[index + 3];
 
-    // アルファチェック：透過部分は描かない
+    // アルファチェック
     if (a < 10) continue;
 
     let col = color(r, g, b);
@@ -242,17 +243,12 @@ function drawBrushArt() {
 
     if (imgIndex === 1 || imgIndex === 2) {
       // 2枚目と3枚目は白をきれいに見せたい
-      // 明度が高い部分を白で描く
-      // 例: br > 220で白
       if (br > 220) {
-        strokeColor = color(0, 0, 255); // HSBで白
+        strokeColor = color(0, 0, 255); // 白
       } else {
-        // 明度が低い部分はその明度に応じたグレーで描く
-        // HSBでH=0, S=0, B=brでグレー
         strokeColor = color(0, 0, br);
       }
     } else {
-      // その他の画像は以前のロジック
       if (br < 50) {
         strokeColor = color(0, 0, 0);
       } else if (br > 220) {
@@ -311,7 +307,6 @@ function calculateResponsiveSizes() {
   logoMarginX = width * 0.05;
   logoMarginY = height * 0.15;
 }
-
 
 function brushFineStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
