@@ -212,7 +212,7 @@ function preload() {
   // ロゴ画像の読み込みパスを修正
   logo = loadImage('assets/images/Marelli_logo_BW_NEG_low.png');
   // フォントの読み込みパスを修正
-  font = loadFont('assets/fonts/SourceCodePro-Regular.otf');
+  font = loadFont('assets/fonts/SourceCodePro-Regular.ttf');
 }
 
 function setup() {
