@@ -227,7 +227,7 @@ function preload() {
 function setup() {
   calculateResponsiveSizes();
   // キャンバスの作成
-  createCanvas(windowWidth, windowWidth / aspectRatio + extraCanvasSpace);
+  createCanvas(windowWidth*0.6, windowWidth / aspectRatio + extraCanvasSpace);
   colorMode(HSB, 255);
   textFont(font);
 
