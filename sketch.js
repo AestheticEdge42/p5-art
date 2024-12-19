@@ -13,7 +13,7 @@ let strokesPerFrame = 1500;
 let hueBase = 0;
 let hueRange = 30;
 let logo;
-let aspectRatio = 16 / 9;
+let aspectRatio = 16 / 9; // デフォルトのアスペクト比
 let filterApplied = false;
 let filterHeight;
 let logoWidth, logoHeight;
@@ -77,7 +77,6 @@ let instructionsBaseTextSizeFactor = 0.024;
 let instructionsY;
 let instructionsHeight;
 let introTextSize;
-let extraCanvasSpace = 200;
 let rainbowHue = 0;
 
 let instructionsTargetY;
@@ -86,7 +85,13 @@ let instructionScale = 1;
 
 let nextLayerMessage = "Click to move on \nto the next art layer.";
 
-// スクロールテキストクラス
+// アート領域とマージンの設定
+let marginX, marginY;
+let artWidth, artHeight;
+let artOriginX, artOriginY;
+let brushScale;
+
+// スクロールテキストを管理するクラス
 class ScrollingText {
   constructor(text, y, speed, color, size, reverseScroll = false) {
     this.text = text;
@@ -190,14 +195,14 @@ function preload() {
 }
 
 function setup() {
-  calculateResponsiveSizes();
-  // キャンバスの作成
-  createCanvas(windowWidth, artHeight + extraCanvasSpace);
+  createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 255);
   textFont(font);
 
-  // ブラシレイヤー用のグラフィックスオブジェクトを作成
-  brushLayer = createGraphics(width, artHeight);
+  calculateResponsiveSizes();
+
+  // ブラシレイヤーをアート領域のサイズで作成
+  brushLayer = createGraphics(artWidth, artHeight);
   brushLayer.colorMode(HSB, 255);
   brushLayer.clear();
 
@@ -205,22 +210,22 @@ function setup() {
     img.loadPixels();
   }
 
-  // 上部と下部のスクロールテキストオブジェクトを作成
+  // スクロールテキストオブジェクトの作成
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                       topAreaHeight / 2 + textSizeTop / 3, 
+                                       artOriginY + topAreaHeight / 2 + textSizeTop / 3, 
                                        2, 
                                        color(topTextColor), 
                                        textSizeTop, 
                                        false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                          artOriginY + artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
                                           2, 
                                           color(bottomTextColor), 
                                           textSizeBottom, 
                                           true);
 
-  // ノイズシードを設定
+  // ノイズシードの設定
   noiseSeed(noiseSeedVal);
   background(0);
 
@@ -229,60 +234,78 @@ function setup() {
 }
 
 function calculateResponsiveSizes() {
-  // レスポンシブなサイズを計算
-  artHeight = windowWidth / aspectRatio; // グローバル変数として設定
-  extraCanvasSpace = artHeight * 0.125; // 12.5%の追加スペース
-  topAreaHeight = artHeight * 0.1; // 10%のテキスト領域
-  bottomAreaHeight = artHeight * 0.1;
+  // マージンを5%に設定
+  marginX = width * 0.05;
+  marginY = height * 0.05;
 
-  textSizeTop = artHeight * 0.03; // テキストサイズトップ
-  textSizeBottom = artHeight * 0.02; // テキストサイズボトム
+  // 一時的なアート幅と高さを計算
+  let tempArtWidth = width - 2 * marginX;
+  let tempArtHeight = tempArtWidth / aspectRatio;
 
-  // ロゴのサイズとマージンを計算
-  logoWidth = width * 0.08;
+  // アート領域のサイズをウィンドウサイズに合わせて調整
+  if (tempArtHeight > height - 2 * marginY) {
+    artHeight = height - 2 * marginY;
+    artWidth = artHeight * aspectRatio;
+  } else {
+    artWidth = tempArtWidth;
+    artHeight = tempArtHeight;
+  }
+
+  // アート領域の開始位置（左上）
+  artOriginX = (width - artWidth) / 2;
+  artOriginY = (height - artHeight) / 2;
+
+  // ブラシサイズのスケーリング
+  brushScale = min(artWidth, artHeight) / 1000;
+
+  // テキストサイズの調整
+  textSizeTop = artHeight * 0.03;
+  textSizeBottom = artHeight * 0.02;
+
+  // ロゴのサイズとマージンの計算
+  logoWidth = artWidth * 0.08; // アート幅の8%
   if (logo && logo.width !== 0 && logo.height !== 0) {
     logoHeight = logo.height * (logoWidth / logo.width);
   } else {
     logoHeight = logoWidth; // デフォルト値
   }
-  logoMarginX = width * 0.05;
-  logoMarginY = artHeight * 0.15;
+  logoMarginX = artWidth * 0.05; // アート幅の5%
+  logoMarginY = artHeight * 0.15; // アート高さの15%
 
-  // レイヤー情報の位置を計算
-  layerInfoX = width * 0.05;
-  layerInfoY = height * 0.05;
+  // レイヤー情報の位置をアート領域内に設定
+  layerInfoX = artOriginX + 20; // アート開始位置から20px右
+  layerInfoY = artOriginY + 20; // アート開始位置から20px下
 
-  // プログレスバーの位置とサイズを計算
-  progressBarX = width * 0.05;
-  progressBarY = layerInfoY + 70;
-  progressBarWidth = width * 0.3;
-  progressBarHeight = artHeight * 0.015;
+  // プログレスバーの位置とサイズ
+  progressBarX = layerInfoX;
+  progressBarY = layerInfoY + 70; // レイヤー情報から70px下
+  progressBarWidth = artWidth * 0.3; // アート幅の30%
+  progressBarHeight = artHeight * 0.015; // アート高さの1.5%
 }
 
 function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
   calculateResponsiveSizes();
-  // キャンバスサイズをリサイズ
-  resizeCanvas(windowWidth, artHeight + extraCanvasSpace);
 
-  // ブラシレイヤーをリサイズ
+  // キャンバスサイズのリサイズ後、ブラシレイヤーをリサイズ
   if (brushLayer) {
     let oldBrush = brushLayer.get();
-    brushLayer.resizeCanvas(width, artHeight);
-    brushLayer.image(oldBrush, 0, 0, width, artHeight);
+    brushLayer.resizeCanvas(artWidth, artHeight);
+    brushLayer.image(oldBrush, 0, 0, artWidth, artHeight);
   } else {
     console.error('brushLayerが定義されていません。');
   }
 
   // スクロールテキストを再設定
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                       topAreaHeight / 2 + textSizeTop / 3, 
+                                       artOriginY + topAreaHeight / 2 + textSizeTop / 3, 
                                        2, 
                                        color(topTextColor), 
                                        textSizeTop, 
                                        false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                          artOriginY + artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
                                           2, 
                                           color(bottomTextColor), 
                                           textSizeBottom, 
@@ -304,7 +327,7 @@ function setupInstructions() {
     instructionsY = (height - instructionsHeight) / 2;
   }
 
-  instructionsTargetY = artHeight; 
+  instructionsTargetY = artOriginY + artHeight; 
 }
 
 function draw() {
@@ -318,12 +341,12 @@ function draw() {
     // ブラシアートを描画
     drawBrushArt();
     // ブラシレイヤーをキャンバスに表示
-    image(brushLayer, 0, 0, width, artHeight);
+    image(brushLayer, artOriginX, artOriginY, artWidth, artHeight);
 
     // 上部テキスト領域の背景を描画
     noStroke();
     fill(0);
-    rect(0, 0, width, topAreaHeight);
+    rect(artOriginX, artOriginY - topAreaHeight, artWidth, topAreaHeight);
 
     // テキストのノイズオフセットを更新
     textNoiseOffsetTop += 0.01;
@@ -335,10 +358,10 @@ function draw() {
     // 下部テキスト領域の背景を描画
     noStroke();
     fill(0);
-    rect(0, artHeight - bottomAreaHeight, width, bottomAreaHeight);
+    rect(artOriginX, artOriginY + artHeight, artWidth, bottomAreaHeight);
 
     // 下部スクロールテキストの位置を調整
-    bottomScrollingText.baseY = artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5;
+    bottomScrollingText.baseY = artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5;
     bottomScrollingText.y = bottomScrollingText.baseY;
     bottomScrollingText.update(textNoiseOffsetBottom);
     bottomScrollingText.display();
@@ -457,13 +480,13 @@ function drawBrushArt() {
 
   // フレームごとのストロークを描画
   for (let i = 0; i < strokesPerFrame; i++) {
-    let nx = random(width);
-    let ny = random(artHeight);
+    let nx = random(brushLayer.width);
+    let ny = random(brushLayer.height);
     let nVal = noise(nx * noiseScale, ny * noiseScale, frameCount * 0.0005);
     if (nVal < 0.3) continue;
 
-    let x = int(map(nx, 0, width, 0, img.width));
-    let y = int(map(ny, 0, artHeight, 0, img.height));
+    let x = int(map(nx, 0, brushLayer.width, 0, img.width));
+    let y = int(map(ny, 0, brushLayer.height, 0, img.height));
 
     let index = (x + y * img.width) * 4;
     let r = img.pixels[index];
@@ -522,7 +545,7 @@ function drawBrushArt() {
     brushLayer.push();
     brushLayer.translate(nx, ny);
     brushLayer.rotate(prevAngle);
-    let strokeLength = map(mouseSpeed, 0, 50, 10, 50);
+    let strokeLength = map(mouseSpeed, 0, 50, 10, 50) * brushScale;
 
     let strokeType = int(random(3));
     if (strokeType === 0) {
@@ -542,22 +565,22 @@ function drawBrushArt() {
 
 function drawFilterOverArt(artHeight) {
   // アートの上にフィルターを描画
-  let filterBuffer = createGraphics(width, artHeight);
+  let filterBuffer = createGraphics(artWidth, artHeight);
   filterBuffer.clear();
   for (let y = artHeight - filterHeight; y < artHeight; y++) {
     let alpha = map(y, artHeight - filterHeight, artHeight, 0, 55);
     filterBuffer.noStroke();
     filterBuffer.fill(0, alpha);
-    filterBuffer.rect(0, y, width, 1);
+    filterBuffer.rect(0, y, artWidth, 1);
   }
-  image(filterBuffer, 0, 0);
+  image(filterBuffer, artOriginX, artOriginY);
 }
 
 function drawLogoOnArt(artHeight) {
   // ロゴがロードされている場合に描画
   if (logo && logo.width !== 0 && logo.height !== 0) {
-    let xPosition = width - logoWidth - logoMarginX;
-    let yPosition = artHeight - logoHeight - logoMarginY;
+    let xPosition = artOriginX + artWidth - logoWidth - logoMarginX;
+    let yPosition = artOriginY + artHeight - logoHeight - logoMarginY;
     image(logo, xPosition, yPosition, logoWidth, logoHeight);
   }
 }
@@ -567,16 +590,16 @@ function displayLayerInfo() {
   noStroke();
   fill(0, 180); 
   // レイヤー情報の背景パネルを描画
-  rect(layerInfoX, layerInfoY + 20, 300, 120, 10);
+  rect(layerInfoX, layerInfoY, 300, 120, 10);
   pop();
 
   push();
   fill(255);
   textAlign(LEFT, TOP);
   textSize(20);
-  // レイヤー情報テキスト（Framesは削除）
+  // レイヤー情報テキスト
   let layerInfo = `Layer: ${imgIndex + 1}/${imgNames.length}`;
-  text(layerInfo, layerInfoX + 90, layerInfoY + 30);
+  text(layerInfo, layerInfoX + 90, layerInfoY + 10);
   pop();
 
   // プログレスバーの進捗を計算
@@ -586,12 +609,12 @@ function displayLayerInfo() {
   push();
   // プログレスバーの背景
   fill(255, 50);
-  rect(progressBarX + 50, progressBarY - 5, progressBarWidth, progressBarHeight, 5);
+  rect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5);
 
   // プログレスバーの進捗部分
   fill(0, 255, 0);
   let barWidth = map(progress, 0, 100, 0, progressBarWidth);
-  rect(progressBarX + 50, progressBarY - 5, barWidth, progressBarHeight, 5);
+  rect(progressBarX, progressBarY, barWidth, progressBarHeight, 5);
   pop();
 
   // プログレスが100以上の場合、虹色でメッセージを表示
@@ -618,11 +641,11 @@ function displayLayerInfo() {
 
 function brushFineStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.5, 1));
+  brushLayer.strokeWeight(random(0.5, 1) * brushScale);
   brushLayer.beginShape();
   for (let i = 0; i < 10; i++) {
     let angle = random(TWO_PI);
-    let radius = random(strokeLength * 0.001, strokeLength * 0.003);
+    let radius = random(strokeLength * 0.001, strokeLength * 0.003) * brushScale;
     brushLayer.vertex(cos(angle) * radius, sin(angle) * radius);
   }
   brushLayer.endShape(CLOSE);
@@ -630,19 +653,19 @@ function brushFineStroke(strokeColor, strokeLength) {
 
 function brushMediumStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(1, 3));
+  brushLayer.strokeWeight(random(1, 3) * brushScale);
   for (let i = 0; i < 5; i++) {
-    let offset = random(-strokeLength / 4, strokeLength / 4);
-    brushLayer.line(-strokeLength / 2 + offset, offset, strokeLength / 2 + offset, offset);
+    let offset = random(-strokeLength / 4, strokeLength / 4) * brushScale;
+    brushLayer.line(-strokeLength / 2 * brushScale + offset, offset, strokeLength / 2 * brushScale + offset, offset);
   }
 }
 
 function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(3, 5));
+  brushLayer.strokeWeight(random(3, 5) * brushScale);
   brushLayer.noFill();
-  brushLayer.ellipse(0, 0, strokeLength * 0.02, strokeLength * 0.02);
-  brushLayer.line(-strokeLength / 2, 0, strokeLength / 2, 0);
+  brushLayer.ellipse(0, 0, strokeLength * 0.02 * brushScale, strokeLength * 0.02 * brushScale);
+  brushLayer.line(-strokeLength / 2 * brushScale, 0, strokeLength / 2 * brushScale, 0);
 }
 
 function mousePressed() {
@@ -663,26 +686,24 @@ function mousePressed() {
       img.loadPixels();
       imgLoaded = true;
 
-      let artHeight = width / aspectRatio;
-
       // 既存のブラシレイヤーをリサイズ
       let oldBrush = brushLayer.get();
-      brushLayer.resizeCanvas(width, artHeight);
-      brushLayer.image(oldBrush, 0, 0, width, artHeight);
+      brushLayer.resizeCanvas(artWidth, artHeight);
+      brushLayer.image(oldBrush, 0, 0, artWidth, artHeight);
 
       calculateResponsiveSizes();
       filterApplied = false;
 
       // スクロールテキストを再設定
       topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                           topAreaHeight / 2 + textSizeTop / 3, 
+                                           artOriginY + topAreaHeight / 2 + textSizeTop / 3, 
                                            2, 
                                            color(topTextColor), 
                                            textSizeTop, 
                                            false);
 
       bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                              artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                              artOriginY + artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
                                               2, 
                                               color(bottomTextColor), 
                                               textSizeBottom, 
@@ -694,4 +715,45 @@ function mousePressed() {
       console.error('Failed to load the next image.');
     });
   }
+}
+
+function displayInstructions() {
+  push();
+  textAlign(CENTER, CENTER);
+
+  // インストラクション背景の描画
+  fill(0, 200);
+  noStroke();
+  rect(0, instructionsY, width, instructionsHeight);
+
+  // インストラクションテキストの設定
+  fill(255);
+  textSize(introTextSize);
+  textLeading(introTextSize * 1.5);
+
+  let displayText = introText;
+  if (state === 'art') {
+    // アート状態では"To start the art..."行を削除
+    let lines = displayText.split('\n').filter(line => line !== rainbowMessage);
+    displayText = lines.join('\n');
+  }
+
+  let lines = displayText.split('\n');
+  text(lines.join('\n'), width / 2, instructionsY + instructionsHeight / 2);
+
+  // 虹色明滅ライン("To start the art...")はintro/transition時のみ表示
+  if (state !== 'art') {
+    let rainbowLineIndex = lines.indexOf(rainbowMessage);
+    if (rainbowLineIndex >= 0) {
+      // 虹色の明滅
+      rainbowHue = (rainbowHue + 4) % 255;
+      fill(rainbowHue, 155, 255);
+      // 行のY計算
+      let lineHeight = introTextSize * 1.5;
+      let textBlockY = instructionsY + instructionsHeight / 2;
+      let rainbowY = textBlockY - (lineHeight * (lines.length / 2 - rainbowLineIndex - 0.5));
+      text(lines[rainbowLineIndex], width / 2, rainbowY);
+    }
+  }
+  pop();
 }
