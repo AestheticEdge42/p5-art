@@ -41,6 +41,7 @@ let prevAngle = 0;
 
 // 使用するフォント
 let font;
+let fontLoaded = false; // グローバルに移動
 
 // 上部と下部のスクロールテキストオブジェクト
 let topScrollingText;
@@ -228,20 +229,18 @@ function preload() {
     console.error('Failed to load the logo image.');
   });
 
-// フォントがロードされたかどうかのフラグ
-let fontLoaded = false;
-
-// フォントの読み込み（ローカルホストの場合）
-font = loadFont('assets/fonts/sourcecodepro-regular.otf', 
-  () => { 
-    console.log('Font loaded successfully.');
-    fontLoaded = true;
-  },
-  () => {
-    console.error('Failed to load the font.');
-    fontLoaded = false;
-  }
-);
+  // フォントの読み込み
+  font = loadFont('assets/fonts/sourcecodepro-regular.otf', 
+    () => { 
+      console.log('Font loaded successfully.');
+      fontLoaded = true;
+    },
+    () => {
+      console.error('Failed to load the font.');
+      fontLoaded = false;
+    }
+  );
+} // preload 関数を正しく閉じる
 
 function setup() {
   calculateResponsiveSizes();
