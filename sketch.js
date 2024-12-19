@@ -52,7 +52,7 @@ let layerBrightnessScale = [1.8, 1.2, 1.0, 1.5];
 let layerFrameCount = 0;
 let maxLayerFrames = 700; // 元は2000
 
-let layerInfoX = 50;
+let layerInfoX = 40;
 let layerInfoY = 50;
 let progressBarX = 50;
 let progressBarY = 120;
