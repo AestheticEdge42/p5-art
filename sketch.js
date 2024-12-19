@@ -656,7 +656,7 @@ function brushMediumStroke(strokeColor, strokeLength) {
   brushLayer.strokeWeight(random(0.01, 0.05) * brushScale);
   for (let i = 0; i < 5; i++) {
     let offset = random(-strokeLength / 4, strokeLength / 4) * brushScale;
-    brushLayer.line(-strokeLength / 2 * brushScale + offset, offset, strokeLength / 52 * brushScale + offset, offset);
+    brushLayer.line(-strokeLength / 0.5 * brushScale + offset, offset, strokeLength / 0.5 * brushScale + offset, offset);
   }
 }
 
