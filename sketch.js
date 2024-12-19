@@ -253,7 +253,7 @@ function calculateResponsiveSizes() {
 
   // アート領域の開始位置（左上）
   artOriginX = (width - artWidth) / 2;
-  artOriginY = (height - artHeight) / 2;
+  artOriginY = (height - artHeight) / 1;
 
   // ブラシサイズのスケーリング
   brushScale = min(artWidth, artHeight) / 1000;
