@@ -235,8 +235,8 @@ function setup() {
 
 function calculateResponsiveSizes() {
   // マージンを5%に設定
-  marginX = width * 0.07;
-  marginY = height * 0.2;
+  marginX = width * 0.05;
+  marginY = height * 0.05;
 
   // 一時的なアート幅と高さを計算
   let tempArtWidth = width - 2 * marginX;
@@ -252,8 +252,8 @@ function calculateResponsiveSizes() {
   }
 
   // アート領域の開始位置（左上）
-  artOriginX = (width - artWidth) / 1.5;
-  artOriginY = (height - artHeight) / 1.5;
+  artOriginX = (width - artWidth) / 2;
+  artOriginY = (height - artHeight) / 2;
 
   // ブラシサイズのスケーリング
   brushScale = min(artWidth, artHeight) / 1000;
@@ -641,7 +641,7 @@ function displayLayerInfo() {
 
 function brushFineStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.05, 0.1) * brushScale);
+  brushLayer.strokeWeight(random(0.5, 1) * brushScale);
   brushLayer.beginShape();
   for (let i = 0; i < 10; i++) {
     let angle = random(TWO_PI);
@@ -653,7 +653,7 @@ function brushFineStroke(strokeColor, strokeLength) {
 
 function brushMediumStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.1, 0.3) * brushScale);
+  brushLayer.strokeWeight(random(1, 3) * brushScale);
   for (let i = 0; i < 5; i++) {
     let offset = random(-strokeLength / 4, strokeLength / 4) * brushScale;
     brushLayer.line(-strokeLength / 2 * brushScale + offset, offset, strokeLength / 2 * brushScale + offset, offset);
@@ -662,7 +662,7 @@ function brushMediumStroke(strokeColor, strokeLength) {
 
 function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.3, 0.5) * brushScale);
+  brushLayer.strokeWeight(random(3, 5) * brushScale);
   brushLayer.noFill();
   brushLayer.ellipse(0, 0, strokeLength * 0.02 * brushScale, strokeLength * 0.02 * brushScale);
   brushLayer.line(-strokeLength / 2 * brushScale, 0, strokeLength / 2 * brushScale, 0);
@@ -715,45 +715,4 @@ function mousePressed() {
       console.error('Failed to load the next image.');
     });
   }
-}
-
-function displayInstructions() {
-  push();
-  textAlign(CENTER, CENTER);
-
-  // インストラクション背景の描画
-  fill(0, 200);
-  noStroke();
-  rect(0, instructionsY, width, instructionsHeight);
-
-  // インストラクションテキストの設定
-  fill(255);
-  textSize(introTextSize);
-  textLeading(introTextSize * 1.5);
-
-  let displayText = introText;
-  if (state === 'art') {
-    // アート状態では"To start the art..."行を削除
-    let lines = displayText.split('\n').filter(line => line !== rainbowMessage);
-    displayText = lines.join('\n');
-  }
-
-  let lines = displayText.split('\n');
-  text(lines.join('\n'), width / 2, instructionsY + instructionsHeight / 2);
-
-  // 虹色明滅ライン("To start the art...")はintro/transition時のみ表示
-  if (state !== 'art') {
-    let rainbowLineIndex = lines.indexOf(rainbowMessage);
-    if (rainbowLineIndex >= 0) {
-      // 虹色の明滅
-      rainbowHue = (rainbowHue + 4) % 255;
-      fill(rainbowHue, 155, 255);
-      // 行のY計算
-      let lineHeight = introTextSize * 1.5;
-      let textBlockY = instructionsY + instructionsHeight / 2;
-      let rainbowY = textBlockY - (lineHeight * (lines.length / 2 - rainbowLineIndex - 0.5));
-      text(lines[rainbowLineIndex], width / 2, rainbowY);
-    }
-  }
-  pop();
 }
