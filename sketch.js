@@ -230,7 +230,7 @@ function preload() {
   });
 
   // フォントの読み込み
-  font = loadFont('assets/fonts/sourcecodepro-regular.otf', 
+  font = loadFont('assets/fonts/SourceCodePro-Regular.ttf', 
     () => { 
       console.log('Font loaded successfully.');
       fontLoaded = true;
