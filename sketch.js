@@ -211,6 +211,7 @@ class ScrollingText {
   }
 }
 
+// preload 関数内でのアセットの読み込み
 function preload() {
   // 画像の読み込み
   img = loadImage(imgNames[imgIndex], () => {
