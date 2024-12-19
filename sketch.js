@@ -627,14 +627,14 @@ function displayLayerInfo() {
     textSize(15);
     rainbowHue = (rainbowHue + 4) % 255;
     fill(rainbowHue, 155, 255);
-    text(nextLayerMessage, layerInfoX + 150, layerInfoY + 110);
+    text(nextLayerMessage, layerInfoX + 150, layerInfoY + 70);
     pop();
   } else {
     push();
     textAlign(CENTER, CENTER);
     textSize(15);
     fill(255);
-    text("Now loading", layerInfoX + 150, layerInfoY + 110);
+    text("Now loading", layerInfoX + 150, layerInfoY + 60);
     pop();
   }
 }
