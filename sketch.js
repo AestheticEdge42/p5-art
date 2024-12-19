@@ -228,8 +228,11 @@ function preload() {
     console.error('Failed to load the logo image.');
   });
 
+// フォントがロードされたかどうかのフラグ
+let fontLoaded = false;
+
 // フォントの読み込み（ローカルホストの場合）
-font = loadFont('assets/fonts/SourceCodePro-Regular.otf', 
+font = loadFont('assets/fonts/sourcecodepro-regular.otf', 
   () => { 
     console.log('Font loaded successfully.');
     fontLoaded = true;
