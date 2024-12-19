@@ -522,7 +522,7 @@ function drawBrushArt() {
 
     if (imgIndex === 0) {
       if (br > 254) {
-        strokeColor = color(0, 0, 255); // 白
+        strokeColor = color(100, 100, 255); // 白
       } else if (br < 150) {
         strokeColor = color(0, 0, 0); // 黒
       } else {
