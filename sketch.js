@@ -1,4 +1,4 @@
-e// グローバル変数の宣言
+// グローバル変数の宣言
 let imgNames = [
   'assets/images/11.png',
   'assets/images/22.png',
