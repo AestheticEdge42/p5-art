@@ -59,8 +59,8 @@ let layerInfoHeight = 160; // ボタン分＋40px程度拡大
 
 let layerInfoX = 40;
 let layerInfoY = 50;
-let progressBarX = 0;
-let progressBarY = 0;
+let progressBarX = 200;
+let progressBarY = 15;
 let progressBarWidth = 200;
 let progressBarHeight = 20;
 
