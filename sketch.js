@@ -21,7 +21,7 @@ let hueRange = 30;
 // ロゴ画像
 let logo;
 // 画像のアスペクト比
-let aspectRatio = 16 / 9; // デフォルトのアスペクト比
+let aspectRatio;
 // フィルターが適用されたかどうかのフラグ
 let filterApplied = false;
 // フィルターの高さ
@@ -39,18 +39,21 @@ let mouseSpeed = 0;
 // 前回の角度
 let prevAngle = 0;
 
+// 使用するフォント
+let font;
+
 // 上部と下部のスクロールテキストオブジェクト
 let topScrollingText;
 let bottomScrollingText;
 // 上部と下部のテキストカラー
 let topTextColor = [255, 155, 205];
 let bottomTextColor = [255, 155, 205];
-// 上部と下部のテキストサイズ（後で動的に設定）
-let textSizeTop;
-let textSizeBottom;
-// 上部と下部のテキスト領域の高さ（後で動的に設定）
-let topAreaHeight;
-let bottomAreaHeight;
+// 上部と下部のテキストサイズ
+let textSizeTop = 48;
+let textSizeBottom = 40;
+// 上部と下部のテキスト領域の高さ
+let topAreaHeight = 60;
+let bottomAreaHeight = 60;
 
 // ブラシレイヤー用のグラフィックスオブジェクト
 let brushLayer;
@@ -71,14 +74,14 @@ let layerBrightnessScale = [1.8, 1.2, 1.0, 1.5];
 let layerFrameCount = 0;
 let maxLayerFrames = 2000; // 最大フレーム数
 
-// レイヤー情報の表示位置（後で動的に設定）
-let layerInfoX;
-let layerInfoY;
-// プログレスバーの位置とサイズ（後で動的に設定）
-let progressBarX;
-let progressBarY;
-let progressBarWidth;
-let progressBarHeight;
+// レイヤー情報の表示位置
+let layerInfoX = 50;
+let layerInfoY = 50;
+// プログレスバーの位置とサイズ
+let progressBarX = 50;
+let progressBarY = 120;
+let progressBarWidth = 200;
+let progressBarHeight = 20;
 
 // レイヤー3用の青色
 let blueColorForLayer3 = [150, 155, 255];
@@ -107,7 +110,7 @@ let instructionsBaseTextSizeFactor = 0.024;
 let instructionsY;
 let instructionsHeight;
 let introTextSize;
-let extraCanvasSpace; // 後で動的に設定
+let extraCanvasSpace = 200; // 追加のキャンバススペース
 let rainbowHue = 0; // 虹色用の色相
 
 let instructionsTargetY;
@@ -117,7 +120,7 @@ let instructionScale = 1; // テキストのスケール
 // 次のレイヤーへ進む際のメッセージ（改行を含む）
 let nextLayerMessage = "Click to move on \nto the next art layer.";
 
-// スクロールテキストを管理するクラス（textToPointsを使用しない）
+// スクロールテキストを管理するクラス
 class ScrollingText {
   constructor(text, y, speed, color, size, reverseScroll = false) {
     this.text = text;
@@ -128,74 +131,75 @@ class ScrollingText {
     this.size = size; // テキストサイズ
     this.reverseScroll = reverseScroll; // 逆方向にスクロールするかどうか
 
+    // テキストを点に変換
+    this.points = font.textToPoints(this.text, 0, 0, this.size, {
+      sampleFactor: 0.7,
+      simplifyThreshold: 0
+    });
+    this.textWidthValue = this.getTextWidth(); // テキストの幅を取得
     this.x = 0; // 現在のX位置
     this.gap = 200; // テキスト間のギャップ
+    // 各点の状態（点が表示されているかどうか）
+    this.dots = this.points.map(p => ({
+      x: p.x,
+      y: p.y,
+      on: true
+    }));
+  }
 
-    // 点滅のためのタイマー
-    this.blinkTimer = 0;
-    this.blinkInterval = 60; // フレーム数ごとに点滅
-    this.visible = true;
+  // テキストの幅を計算する関数
+  getTextWidth() {
+    let bounds = font.textBounds(this.text, 0, 0, this.size);
+    return bounds.w;
   }
 
   // テキストの更新処理
   update(noiseOffset) {
     if (this.reverseScroll) {
       this.x += this.speed;
-      if (this.x > (width + this.gap)) {
-        this.x = -this.gap;
+      if (this.x > (this.textWidthValue + this.gap)) {
+        this.x = 0;
       }
     } else {
       this.x -= this.speed;
-      if (this.x < -(textWidth(this.text) + this.gap)) {
-        this.x = width + this.gap;
+      if (this.x < -(this.textWidthValue + this.gap)) {
+        this.x = 0;
       }
     }
 
     // ノイズを利用してY位置を微調整
     this.y = this.baseY + map(noise(noiseOffset), 0, 1, -3, 3);
 
-    // 点滅のタイマーを更新
-    this.blinkTimer++;
-    if (this.blinkTimer > this.blinkInterval) {
-      this.visible = !this.visible;
-      this.blinkTimer = 0;
-    }
+    // 点の点滅をランダムに制御
+    this.dots.forEach(dot => {
+      if (random(1) < 0.02) {
+        dot.on = !dot.on;
+      }
+    });
   }
 
   // テキストの表示処理
   display() {
-    if (this.visible) {
-      push();
-      fill(this.color);
-      noStroke();
-      textSize(this.size);
-      textAlign(CENTER, CENTER);
-      text(this.text, this.x, this.y);
-      pop();
+    push();
+    translate(this.x, this.y);
+    fill(this.color);
+    noStroke();
+    for (let dot of this.dots) {
+      if (dot.on) ellipse(dot.x, dot.y, 3, 3);
     }
+    pop();
 
-    // もう一つのテキストを描画して連続スクロールを実現
-    if (this.reverseScroll) {
-      push();
-      fill(this.color);
-      noStroke();
-      textSize(this.size);
-      textAlign(CENTER, CENTER);
-      text(this.text, this.x + textWidth(this.text) + this.gap, this.y);
-      pop();
-    } else {
-      push();
-      fill(this.color);
-      noStroke();
-      textSize(this.size);
-      textAlign(CENTER, CENTER);
-      text(this.text, this.x - textWidth(this.text) - this.gap, this.y);
-      pop();
+    push();
+    translate(this.x + (this.reverseScroll ? -(this.textWidthValue + this.gap) : (this.textWidthValue + this.gap)), this.y);
+    fill(this.color);
+    noStroke();
+    for (let dot of this.dots) {
+      if (dot.on) ellipse(dot.x, dot.y, 3, 3);
     }
+    pop();
   }
 }
 
-// preload 関数内でのアセットの読み込み
 function preload() {
   // 画像の読み込み
   img = loadImage(imgNames[imgIndex], () => {
@@ -212,22 +216,26 @@ function preload() {
     console.error('Failed to load the logo image.');
   });
 
-  // フォントの読み込みは不要（CSSフォントを使用）
+  // フォントの読み込み
+  font = loadFont('assets/fonts/SourceCodePro-Regular.otf', 
+    () => { 
+      console.log('Font loaded successfully.');
+    },
+    () => {
+      console.error('Failed to load the font.');
+    }
+  );
 }
 
 function setup() {
   calculateResponsiveSizes();
   // キャンバスの作成
-  createCanvas(windowWidth * 0.6, windowWidth / aspectRatio + extraCanvasSpace);
+  createCanvas(windowWidth, windowWidth / aspectRatio + extraCanvasSpace);
   colorMode(HSB, 255);
-  
-  // フォントの設定（CSSフォントを使用）
-  textFont('Source Code Pro');
-  textSizeTop = artHeight * 0.03; // テキストサイズトップ
-  textSizeBottom = artHeight * 0.02; // テキストサイズボトム
+  textFont(font);
 
   // ブラシレイヤー用のグラフィックスオブジェクトを作成
-  brushLayer = createGraphics(width, height - extraCanvasSpace);
+  brushLayer = createGraphics(width, windowWidth / aspectRatio);
   brushLayer.colorMode(HSB, 255);
   brushLayer.clear();
 
@@ -237,14 +245,14 @@ function setup() {
 
   // 上部と下部のスクロールテキストオブジェクトを作成
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                       topAreaHeight / 2, 
+                                       topAreaHeight / 2 + textSizeTop / 3, 
                                        2, 
                                        color(topTextColor), 
                                        textSizeTop, 
                                        false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          height - bottomAreaHeight / 2, 
+                                          height - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
                                           2, 
                                           color(bottomTextColor), 
                                           textSizeBottom, 
@@ -292,7 +300,7 @@ function calculateResponsiveSizes() {
 function windowResized() {
   calculateResponsiveSizes();
   // キャンバスサイズをリサイズ
-  resizeCanvas(windowWidth * 0.6, windowWidth / aspectRatio + extraCanvasSpace);
+  resizeCanvas(windowWidth, windowWidth / aspectRatio + extraCanvasSpace);
 
   // ブラシレイヤーをリサイズ
   if (brushLayer) {
@@ -305,14 +313,14 @@ function windowResized() {
 
   // スクロールテキストを再設定
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                       topAreaHeight / 2, 
+                                       topAreaHeight / 2 + textSizeTop / 3, 
                                        2, 
                                        color(topTextColor), 
                                        textSizeTop, 
                                        false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          height - bottomAreaHeight / 2, 
+                                          height - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
                                           2, 
                                           color(bottomTextColor), 
                                           textSizeBottom, 
@@ -372,7 +380,7 @@ function draw() {
     rect(0, artHeight - bottomAreaHeight, width, bottomAreaHeight);
 
     // 下部スクロールテキストの位置を調整
-    bottomScrollingText.baseY = artHeight - bottomAreaHeight / 2;
+    bottomScrollingText.baseY = artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5;
     bottomScrollingText.y = bottomScrollingText.baseY;
     bottomScrollingText.update(textNoiseOffsetBottom);
     bottomScrollingText.display();
@@ -601,51 +609,51 @@ function displayLayerInfo() {
   noStroke();
   fill(0, 180); 
   // レイヤー情報の背景パネルを描画
-  rect(layerInfoX, layerInfoY + 20, width * 0.3, height * 0.15, 10);
+  rect(layerInfoX, layerInfoY + 20, 300, 120, 10);
   pop();
 
   push();
   fill(255);
   textAlign(LEFT, TOP);
-  textSize(height * 0.02);
+  textSize(20);
   // レイヤー情報テキスト（Framesは削除）
   let layerInfo = `Layer: ${imgIndex + 1}/${imgNames.length}`;
-  text(layerInfo, layerInfoX + width * 0.15, layerInfoY + height * 0.03);
+  text(layerInfo, layerInfoX + 90, layerInfoY + 30);
   pop();
 
   // プログレスバーの進捗を計算
-  let progress = (layerFrameCount / maxLayerFrames) * 100;
+  let progress = (layerFrameCount / maxLayerFrames) * 150;
   progress = constrain(progress, 0, 100);
 
   push();
   // プログレスバーの背景
   fill(255, 50);
-  rect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5);
+  rect(progressBarX + 50, progressBarY - 5, progressBarWidth, progressBarHeight, 5);
 
   // プログレスバーの進捗部分
-  fill(120, 255, 255); // HSBで緑色
+  fill(0, 255, 0);
   let barWidth = map(progress, 0, 100, 0, progressBarWidth);
-  rect(progressBarX, progressBarY, barWidth, progressBarHeight, 5);
+  rect(progressBarX + 50, progressBarY - 5, barWidth, progressBarHeight, 5);
   pop();
 
   // プログレスが100以上の場合、虹色でメッセージを表示
   if (progress >= 100) {
     push();
     textAlign(CENTER, CENTER);
-    textSize(height * 0.015);
+    textSize(15);
     // 虹色の色相を更新
     rainbowHue = (rainbowHue + 4) % 255;
     fill(rainbowHue, 155, 255);
     // メッセージを表示
-    text(nextLayerMessage, width * 0.2, progressBarY + progressBarHeight + height * 0.03);
+    text(nextLayerMessage, layerInfoX + 150, layerInfoY + 110);
     pop();
   } else {
     // プログレスが100未満の場合、「Now loading」を白文字で表示
     push();
     textAlign(CENTER, CENTER);
-    textSize(height * 0.015);
+    textSize(15);
     fill(255); // 白色
-    text("Now loading", width * 0.2, progressBarY + progressBarHeight + height * 0.03);
+    text("Now loading", layerInfoX + 150, layerInfoY + 110);
     pop();
   }
 }
@@ -713,14 +721,14 @@ function mousePressed() {
 
       // スクロールテキストを再設定
       topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                           topAreaHeight / 2, 
+                                           topAreaHeight / 2 + textSizeTop / 3, 
                                            2, 
                                            color(topTextColor), 
                                            textSizeTop, 
                                            false);
 
       bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                              artHeight - bottomAreaHeight / 2, 
+                                              artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
                                               2, 
                                               color(bottomTextColor), 
                                               textSizeBottom, 
