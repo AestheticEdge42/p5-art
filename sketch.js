@@ -653,7 +653,7 @@ function brushFineStroke(strokeColor, strokeLength) {
 
 function brushMediumStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.5, 0.15) * brushScale);
+  brushLayer.strokeWeight(random(0.05, 0.5) * brushScale);
   for (let i = 0; i < 5; i++) {
     let offset = random(-strokeLength / 4, strokeLength / 4) * brushScale;
     brushLayer.line(-strokeLength / 2 * brushScale + offset, offset, strokeLength / 2 * brushScale + offset, offset);
@@ -662,7 +662,7 @@ function brushMediumStroke(strokeColor, strokeLength) {
 
 function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(1.5, 2.5) * brushScale);
+  brushLayer.strokeWeight(random(0.25, 0.5) * brushScale);
   brushLayer.noFill();
   brushLayer.ellipse(0, 0, strokeLength * 0.02 * brushScale, strokeLength * 0.02 * brushScale);
   brushLayer.line(-strokeLength / 2 * brushScale, 0, strokeLength / 2 * brushScale, 0);
