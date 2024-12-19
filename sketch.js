@@ -157,8 +157,11 @@ class ScrollingText {
 
   // テキストの幅を計算する関数
   getTextWidth() {
-    let bounds = font.textBounds(this.text, 0, 0, this.size);
-    return bounds.w;
+    if (fontLoaded) {
+      let bounds = font.textBounds(this.text, 0, 0, this.size);
+      return bounds.w;
+    }
+    return 0;
   }
 
   // テキストの更新処理
@@ -207,9 +210,6 @@ class ScrollingText {
     pop();
   }
 }
-
-// フォントがロードされたかどうかのフラグ
-let fontLoaded = false;
 
 function preload() {
   // 画像の読み込み
@@ -360,7 +360,7 @@ function setupInstructions() {
   let artHeight = windowWidth / aspectRatio;
   
   if (state === "intro") {
-    instructionsY = (height - instructionsHeight)/2;
+    instructionsY = (height - instructionsHeight) / 2;
   }
 
   instructionsTargetY = artHeight; 
@@ -369,7 +369,7 @@ function setupInstructions() {
 function draw() {
   background(0);
 
-  let artHeight = windowWidth / aspectRatio;
+  let artHeight = width / aspectRatio;
 
   if (imgLoaded) {
     // 背景の色相オフセットを更新
