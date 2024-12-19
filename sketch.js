@@ -52,15 +52,10 @@ let layerFrameCount = 0;
 let maxLayerFrames = 700; 
 
 // layerInfoエリアはボタン分大きくする
-// 元々 300 x 120 のような固定値だったが、Instructionボタンを入れるので高さを増やす
-// 全体をセンタリングしたいので、幅高さは固定とし、その中でテキストを中央寄せ。
 let layerInfoWidth = 300;
-let layerInfoHeight = 160; // ボタン分＋40px程度拡大
-
+let layerInfoHeight = 160; 
 let layerInfoX = 40;
 let layerInfoY = 50;
-let progressBarX = 200;
-let progressBarY = 15;
 let progressBarWidth = 200;
 let progressBarHeight = 20;
 
@@ -98,8 +93,10 @@ let artOriginX, artOriginY;
 let brushScale;
 
 let showInstructions = true; // 初期はイントロ表示中はtrue
-// Instructionボタン用の領域
 let instructionButtonX, instructionButtonY, instructionButtonW, instructionButtonH;
+
+// Sキーで保存する際に使用するフラグ
+let justSaving = false;
 
 // スクロールテキストを管理するクラス
 class ScrollingText {
@@ -227,6 +224,7 @@ function setup() {
                                           true);
 
   setupInstructions();
+  frameRate(30);
 }
 
 function calculateResponsiveSizes() {
@@ -267,18 +265,8 @@ function calculateResponsiveSizes() {
   progressBarWidth = artWidth * 0.1; 
   progressBarHeight = artHeight * 0.02;
 
-  // layerInfoパネル内でテキストとボタンを中央に揃えるための計算
-  // layerInfoは幅layerInfoWidth, 高さlayerInfoHeightで表示する
-  // その中で、Layer情報、ProgressBar、Now loadingやNext layer message、Instructionボタンを中央揃え
-  // layerInfoの左上は(layerInfoX, layerInfoY)。
-  // 中央は (layerInfoX + layerInfoWidth/2, layerInfoY + layerInfoHeight/2)
-
-  // ProgressBarやテキストの位置は後でdisplayLayerInfo内で計算
-
-  // Instructionボタンのサイズと位置(仮)：
   instructionButtonW = 100;
   instructionButtonH = 30;
-  // ボタンは下部中央に配置
   instructionButtonX = layerInfoX + (layerInfoWidth - instructionButtonW)/2;
   instructionButtonY = layerInfoY + layerInfoHeight - instructionButtonH - 10; 
 }
@@ -316,13 +304,14 @@ function setupInstructions() {
   let dim = min(width, height);
   introTextSize = dim * instructionsBaseTextSizeFactor * instructionScale; 
   instructionsHeight = height * instructionsHeightFactor;
-  // intro時に表示するが、今回はフェードアウトのみで移動はしないのでinstructionsYは中央付近固定
   if (state === "intro") {
     instructionsY = (height - instructionsHeight) / 2;
   }
 }
 
 function draw() {
+  // justSavingがtrueのときはインストラクションやlayerInfoを描画せず
+  // アートのみ描画後にsaveCanvasする
   background(0);
 
   if (imgLoaded) {
@@ -331,6 +320,7 @@ function draw() {
     drawBrushArt();
     image(brushLayer, artOriginX, artOriginY, artWidth, artHeight);
 
+    // 上部テキスト
     noStroke();
     fill(0);
     rect(artOriginX, artOriginY - topAreaHeight, artWidth, topAreaHeight);
@@ -349,6 +339,7 @@ function draw() {
     ctx.restore();
     pop();
 
+    // 下部テキスト
     noStroke();
     fill(0);
     rect(artOriginX, artOriginY + artHeight, artWidth, bottomAreaHeight);
@@ -373,19 +364,24 @@ function draw() {
     }
 
     drawLogoOnArt(artHeight);
-
-    if (state === "art") displayLayerInfo();
   }
 
-  // オーバーレイとインストラクション表示
+  if (justSaving) {
+    // 保存時はインストラクションやlayerInfoを表示しない
+    saveCanvas('my_brush_art', 'png');
+    justSaving = false;
+    return; // 描画ここで終了
+  }
+
+  // 通常時は以下の処理を実行
+
+  // オーバーレイとインストラクション表示 (intro～transition中はoverlayAlphaあり)
   if (overlayAlpha > 0) {
-    // stateがintro -> transition -> artとなる際にoverlayAlphaをフェードアウト
     overlayAlpha = lerp(overlayAlpha, (state === "transition") ? 0 : overlayAlpha, 0.05);
     if (state === "transition" && overlayAlpha < 1) {
-      // フェードアウト完了
       overlayAlpha = 0;
       state = "art";
-      showInstructions = false; // デフォルト非表示
+      showInstructions = false; 
     }
 
     if (overlayAlpha > 0) {
@@ -394,31 +390,31 @@ function draw() {
       fill(0, overlayAlpha);
       rect(0, 0, width, height);
 
-      // インストラクションはshowInstructionsがtrueか、intro/transition状態でのみ表示
       if ((state === "intro" || state === "transition") || showInstructions) {
         displayInstructions();
       }
       pop();
     } else {
-      // アート状態、かつoverlayAlpha=0のとき
-      if (showInstructions) {
-        // Instructionボタンで表示したときはオーバーレイなしで表示
-        displayInstructions();
+      if (state === "art" && showInstructions) {
+        displayInstructions(); 
       }
     }
   } else {
-    // overlayAlpha=0でart状態の場合、showInstructionsがtrueなら背景無しでインストラクション表示
     if (state === "art" && showInstructions) {
       displayInstructions();
     }
+  }
+
+  // stateがartの時にlayerInfoエリアを描画（プログレスバー含む）
+  // インストラクションやoverlayの後に表示することでプログレスバーが隠れないように
+  if (state === "art") {
+    displayLayerInfo();
   }
 }
 
 function displayInstructions() {
   push();
   textAlign(CENTER, CENTER);
-  // showInstructionsがtrueのときは背景半透明で描画
-  // intro時はoverlayAlphaで全画面覆われているが、art時はそれがないので独自に背景を敷く
   if (state === "art" && showInstructions) {
     fill(0, 200);
     noStroke();
@@ -555,7 +551,6 @@ function drawBrushArt() {
 function drawFilterOverArt(artHeight) {
   let filterBuffer = createGraphics(artWidth, artHeight);
   filterBuffer.clear();
-  // filterHeightが定義されていないが、必要なら適宜値をセット
   if (!filterHeight) filterHeight = artHeight * 0.1;
   for (let y = artHeight - filterHeight; y < artHeight; y++) {
     let alpha = map(y, artHeight - filterHeight, artHeight, 0, 55);
@@ -583,14 +578,12 @@ function displayLayerInfo() {
 
   // 中央座標
   let centerX = layerInfoX + layerInfoWidth / 2;
-  let centerY = layerInfoY + layerInfoHeight / 2;
 
   // Layer info
   push();
   fill(255);
   textAlign(CENTER, CENTER);
   textSize(20);
-  // Layer情報は上部に配置
   let layerInfoText = `Layer: ${imgIndex + 1}/${imgNames.length}`;
   text(layerInfoText, centerX, layerInfoY + 30);
   pop();
@@ -604,21 +597,21 @@ function displayLayerInfo() {
   fill(255, 50);
   rect(barX, barY, progressBarWidth, progressBarHeight, 5);
   fill(0, 255, 0);
-  let barWidth = map(progress, 0, 100, 0, progressBarWidth);
-  rect(barX, barY, barWidth, progressBarHeight, 5);
+  let barW = map(progress, 0, 100, 0, progressBarWidth);
+  rect(barX, barY, barW, progressBarHeight, 5);
   pop();
 
   // Next layer message or Now loading
   push();
   textAlign(CENTER, CENTER);
   textSize(15);
-  fill(255);
   let messageY = barY + 40;
   if (progress >= 100) {
     rainbowHue = (rainbowHue + 4) % 255;
     fill(rainbowHue, 155, 255);
     text(nextLayerMessage, centerX, messageY);
   } else {
+    fill(255);
     text("Now loading", centerX, messageY);
   }
   pop();
@@ -627,7 +620,6 @@ function displayLayerInfo() {
   push();
   textAlign(CENTER, CENTER);
   textSize(15);
-  // ボタン背景
   fill(0, 100);
   rect(instructionButtonX, instructionButtonY, instructionButtonW, instructionButtonH, 5);
   fill(255);
@@ -666,21 +658,20 @@ function brushLargeStroke(strokeColor, strokeLength) {
 
 function mousePressed() {
   if (state === "intro") {
-    // フェードアウトを開始
+    // フェードアウト開始
     state = "transition";
     return;
   }
 
   if (state === "art") {
-    // Instructionボタンがクリックされたか判定
+    // Instructionボタンがクリックされたか
     if (mouseX >= instructionButtonX && mouseX <= instructionButtonX + instructionButtonW &&
         mouseY >= instructionButtonY && mouseY <= instructionButtonY + instructionButtonH) {
-      // Instructionボタンクリックでインストラクション表示トグル
       showInstructions = !showInstructions;
       return;
     }
 
-    // その他のクリックで次のレイヤーへ
+    // その他のクリックで次のレイヤー
     imgIndex = (imgIndex + 1) % imgNames.length;
     imgLoaded = false;
 
@@ -714,5 +705,13 @@ function mousePressed() {
     }, () => {
       console.error('Failed to load the next image.');
     });
+  }
+}
+
+function keyPressed() {
+  // Sキーで保存
+  if (key === 'S') {
+    justSaving = true;
+    redraw(); // 再描画して保存
   }
 }
