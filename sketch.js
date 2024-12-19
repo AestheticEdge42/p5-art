@@ -50,7 +50,7 @@ let layerSaturationScale = [5.5, 3.0, 6.0, 4.0];
 let layerBrightnessScale = [1.8, 1.2, 1.0, 1.5];
 
 let layerFrameCount = 0;
-let maxLayerFrames = 2000;
+let maxLayerFrames = 700;
 
 let layerInfoX = 50;
 let layerInfoY = 50;
