@@ -228,18 +228,17 @@ function preload() {
     console.error('Failed to load the logo image.');
   });
 
-  // フォントの読み込み
-  font = loadFont('assets/fonts/SourceCodePro-Regular.ttf', 
-    () => { 
-      console.log('Font loaded successfully.');
-      fontLoaded = true;
-    },
-    () => {
-      console.error('Failed to load the font.');
-      fontLoaded = false;
-    }
-  );
-}
+// フォントの読み込み（ローカルホストの場合）
+font = loadFont('assets/fonts/sourcecodepro-regular.otf', 
+  () => { 
+    console.log('Font loaded successfully.');
+    fontLoaded = true;
+  },
+  () => {
+    console.error('Failed to load the font.');
+    fontLoaded = false;
+  }
+);
 
 function setup() {
   calculateResponsiveSizes();
