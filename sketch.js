@@ -283,8 +283,8 @@ function calculateResponsiveSizes() {
   // プログレスバーの位置とサイズ
   progressBarX = layerInfoX + 30;
   progressBarY = layerInfoY + 40;
-  progressBarWidth = artWidth * 0.2; 
-  progressBarHeight = artHeight * 0.015;
+  progressBarWidth = artWidth * 0.1; 
+  progressBarHeight = artHeight * 0.02;
 }
 
 function windowResized() {
