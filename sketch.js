@@ -1,4 +1,4 @@
-// 画像ファイル名のリスト
+// グローバル変数の宣言
 let imgNames = [
   'assets/images/11.png',
   'assets/images/22.png',
@@ -6,90 +6,59 @@ let imgNames = [
   'assets/images/4.png',
 ];
 
-// 現在の画像インデックス
 let imgIndex = 0;
-// 現在の画像オブジェクト
 let img;
-// 画像が読み込まれたかどうかのフラグ
 let imgLoaded = false;
-// フレームごとのストローク数
 let strokesPerFrame = 1500;
-// 色相の基準値
 let hueBase = 0;
-// 色相の範囲
 let hueRange = 30;
-// ロゴ画像
 let logo;
-// 画像のアスペクト比
-let aspectRatio = 16 / 9; // デフォルトのアスペクト比
-// フィルターが適用されたかどうかのフラグ
+let aspectRatio = 16 / 9;
 let filterApplied = false;
-// フィルターの高さ
 let filterHeight;
-// ロゴの幅と高さ
 let logoWidth, logoHeight;
-// ロゴのマージン（左右と上下）
 let logoMarginX, logoMarginY;
 
-// 前回のマウス位置
 let prevMouseX = 0;
 let prevMouseY = 0;
-// マウスの速度
 let mouseSpeed = 0;
-// 前回の角度
 let prevAngle = 0;
 
-// 使用するフォント
 let font;
 
-// 上部と下部のスクロールテキストオブジェクト
 let topScrollingText;
 let bottomScrollingText;
-// 上部と下部のテキストカラー
 let topTextColor = [255, 155, 205];
 let bottomTextColor = [255, 155, 205];
-// 上部と下部のテキストサイズ
 let textSizeTop = 48;
 let textSizeBottom = 40;
-// 上部と下部のテキスト領域の高さ
 let topAreaHeight = 60;
 let bottomAreaHeight = 60;
 
-// ブラシレイヤー用のグラフィックスオブジェクト
 let brushLayer;
 
-// ノイズ生成用のシード値
 let noiseSeedVal = 0;
-// 背景の色相オフセット
 let backgroundHueOffset = 0;
-// 上部と下部のテキストのノイズオフセット
 let textNoiseOffsetTop = 0;
 let textNoiseOffsetBottom = 1000;
 
-// レイヤーごとの彩度・明度補正値
 let layerSaturationScale = [5.5, 3.0, 6.0, 4.0];
 let layerBrightnessScale = [1.8, 1.2, 1.0, 1.5];
 
-// レイヤーの進行状況を管理する変数
 let layerFrameCount = 0;
-let maxLayerFrames = 2000; // 最大フレーム数
+let maxLayerFrames = 2000;
 
-// レイヤー情報の表示位置
 let layerInfoX = 50;
 let layerInfoY = 50;
-// プログレスバーの位置とサイズ
 let progressBarX = 50;
 let progressBarY = 120;
 let progressBarWidth = 200;
 let progressBarHeight = 20;
 
-// レイヤー3用の青色
 let blueColorForLayer3 = [150, 155, 255];
 
-// 現在の状態を管理する変数（例: "intro", "transition", "art"）
 let state = "intro";
 
-// イントロテキストの内容
 let introText = 
 `Welcome to the Interactive Brush Art.
 Enjoy watching the creation of Brush Art!
@@ -101,45 +70,41 @@ you'll see the final masterpiece come to life.
 ******************************************************************************
 To start the art, please click anywhere on the screen.`;
 
-// "To start the art..."行のメッセージ
 let rainbowMessage = "To start the art, please click anywhere on the screen.";
 
-// テキスト表示領域の高さとテキストサイズの係数
 let instructionsHeightFactor = 0.25;
 let instructionsBaseTextSizeFactor = 0.024;
 let instructionsY;
 let instructionsHeight;
 let introTextSize;
-let extraCanvasSpace = 200; // 追加のキャンバススペース
-let rainbowHue = 0; // 虹色用の色相
+let extraCanvasSpace = 200;
+let rainbowHue = 0;
 
 let instructionsTargetY;
-let overlayAlpha = 255; // オーバーレイの透明度
-let instructionScale = 1; // テキストのスケール
+let overlayAlpha = 255;
+let instructionScale = 1;
 
-// 次のレイヤーへ進む際のメッセージ（改行を含む）
 let nextLayerMessage = "Click to move on \nto the next art layer.";
 
-// スクロールテキストを管理するクラス
+// スクロールテキストクラス
 class ScrollingText {
   constructor(text, y, speed, color, size, reverseScroll = false) {
     this.text = text;
-    this.baseY = y; // 基本のY位置
-    this.y = y; // 現在のY位置
-    this.speed = speed; // スクロール速度
-    this.color = color; // テキストカラー
-    this.size = size; // テキストサイズ
-    this.reverseScroll = reverseScroll; // 逆方向にスクロールするかどうか
+    this.baseY = y;
+    this.y = y;
+    this.speed = speed;
+    this.color = color;
+    this.size = size;
+    this.reverseScroll = reverseScroll;
 
     // テキストを点に変換
     this.points = font.textToPoints(this.text, 0, 0, this.size, {
       sampleFactor: 0.7,
       simplifyThreshold: 0
     });
-    this.textWidthValue = this.getTextWidth(); // テキストの幅を取得
-    this.x = 0; // 現在のX位置
-    this.gap = 200; // テキスト間のギャップ
-    // 各点の状態（点が表示されているかどうか）
+    this.textWidthValue = this.getTextWidth();
+    this.x = 0;
+    this.gap = 200;
     this.dots = this.points.map(p => ({
       x: p.x,
       y: p.y,
@@ -147,13 +112,11 @@ class ScrollingText {
     }));
   }
 
-  // テキストの幅を計算する関数
   getTextWidth() {
     let bounds = font.textBounds(this.text, 0, 0, this.size);
     return bounds.w;
   }
 
-  // テキストの更新処理
   update(noiseOffset) {
     if (this.reverseScroll) {
       this.x += this.speed;
@@ -167,18 +130,17 @@ class ScrollingText {
       }
     }
 
-    // ノイズを利用してY位置を微調整
+    // ノイズでY位置を微調整
     this.y = this.baseY + map(noise(noiseOffset), 0, 1, -3, 3);
 
     // 点の点滅をランダムに制御
     this.dots.forEach(dot => {
-      if (random(1) < 0.02) { // 点滅確率を調整
+      if (random(1) < 0.02) {
         dot.on = !dot.on;
       }
     });
   }
 
-  // テキストの表示処理
   display() {
     push();
     translate(this.x, this.y);
@@ -268,7 +230,7 @@ function setup() {
 
 function calculateResponsiveSizes() {
   // レスポンシブなサイズを計算
-  artHeight = windowWidth / aspectRatio; // グローバル変数として宣言
+  artHeight = windowWidth / aspectRatio; // グローバル変数として設定
   extraCanvasSpace = artHeight * 0.125; // 12.5%の追加スペース
   topAreaHeight = artHeight * 0.1; // 10%のテキスト領域
   bottomAreaHeight = artHeight * 0.1;
@@ -592,8 +554,8 @@ function drawFilterOverArt(artHeight) {
 }
 
 function drawLogoOnArt(artHeight) {
-  // アートの上にロゴを描画
-  if (logoLoaded()) {
+  // ロゴがロードされている場合に描画
+  if (logo && logo.width !== 0 && logo.height !== 0) {
     let xPosition = width - logoWidth - logoMarginX;
     let yPosition = artHeight - logoHeight - logoMarginY;
     image(logo, xPosition, yPosition, logoWidth, logoHeight);
@@ -731,117 +693,5 @@ function mousePressed() {
     }, () => {
       console.error('Failed to load the next image.');
     });
-  }
-}
-
-function windowResized() {
-  calculateResponsiveSizes();
-  // キャンバスサイズをリサイズ
-  resizeCanvas(windowWidth, artHeight + extraCanvasSpace);
-
-  // ブラシレイヤーをリサイズ
-  if (brushLayer) {
-    let oldBrush = brushLayer.get();
-    brushLayer.resizeCanvas(width, artHeight);
-    brushLayer.image(oldBrush, 0, 0, width, artHeight);
-  } else {
-    console.error('brushLayerが定義されていません。');
-  }
-
-  // スクロールテキストを再設定
-  topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                       topAreaHeight / 2 + textSizeTop / 3, 
-                                       2, 
-                                       color(topTextColor), 
-                                       textSizeTop, 
-                                       false);
-
-  bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
-                                          2, 
-                                          color(bottomTextColor), 
-                                          textSizeBottom, 
-                                          true);
-
-  // インストラクションを再設定
-  setupInstructions();
-  if (state === "art") {
-    instructionsY = instructionsTargetY; 
-  }
-}
-
-function drawFilterOverArt(artHeight) {
-  // アートの上にフィルターを描画
-  let filterBuffer = createGraphics(width, artHeight);
-  filterBuffer.clear();
-  for (let y = artHeight - filterHeight; y < artHeight; y++) {
-    let alpha = map(y, artHeight - filterHeight, artHeight, 0, 55);
-    filterBuffer.noStroke();
-    filterBuffer.fill(0, alpha);
-    filterBuffer.rect(0, y, width, 1);
-  }
-  image(filterBuffer, 0, 0);
-}
-
-function drawLogoOnArt(artHeight) {
-  // ロゴがロードされている場合に描画
-  if (logo && logo.width !== 0 && logo.height !== 0) {
-    let xPosition = width - logoWidth - logoMarginX;
-    let yPosition = artHeight - logoHeight - logoMarginY;
-    image(logo, xPosition, yPosition, logoWidth, logoHeight);
-  }
-}
-
-function displayLayerInfo() {
-  push();
-  noStroke();
-  fill(0, 180); 
-  // レイヤー情報の背景パネルを描画
-  rect(layerInfoX, layerInfoY + 20, 300, 120, 10);
-  pop();
-
-  push();
-  fill(255);
-  textAlign(LEFT, TOP);
-  textSize(20);
-  // レイヤー情報テキスト（Framesは削除）
-  let layerInfo = `Layer: ${imgIndex + 1}/${imgNames.length}`;
-  text(layerInfo, layerInfoX + 90, layerInfoY + 30);
-  pop();
-
-  // プログレスバーの進捗を計算
-  let progress = (layerFrameCount / maxLayerFrames) * 100;
-  progress = constrain(progress, 0, 100);
-
-  push();
-  // プログレスバーの背景
-  fill(255, 50);
-  rect(progressBarX + 50, progressBarY - 5, progressBarWidth, progressBarHeight, 5);
-
-  // プログレスバーの進捗部分
-  fill(0, 255, 0);
-  let barWidth = map(progress, 0, 100, 0, progressBarWidth);
-  rect(progressBarX + 50, progressBarY - 5, barWidth, progressBarHeight, 5);
-  pop();
-
-  // プログレスが100以上の場合、虹色でメッセージを表示
-  if (progress >= 100) {
-    push();
-    textAlign(CENTER, CENTER);
-    textSize(15);
-    // 虹色の色相を更新
-    rainbowHue = (rainbowHue + 4) % 255;
-    fill(rainbowHue, 155, 255);
-    // メッセージを表示
-    text(nextLayerMessage, layerInfoX + 150, layerInfoY + 110);
-    pop();
-  } else {
-    // プログレスが100未満の場合、「Now loading」を白文字で表示
-    push();
-    textAlign(CENTER, CENTER);
-    textSize(15);
-    fill(255); // 白色
-    text("Now loading", layerInfoX + 150, layerInfoY + 110);
-    pop();
   }
 }
