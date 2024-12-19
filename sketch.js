@@ -55,8 +55,8 @@ let layerInfoWidth = 300;
 let layerInfoHeight = 160; // Instructionボタン分高さ拡張
 let layerInfoX = 40;
 let layerInfoY = 50;
-let progressBarX = 0;
-let progressBarY = 0;
+let progressBarX = 200;
+let progressBarY = 150;
 let progressBarWidth = 200;
 let progressBarHeight = 20;
 
