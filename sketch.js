@@ -270,7 +270,7 @@ function calculateResponsiveSizes() {
     logoHeight = logoWidth; // デフォルト値
   }
   logoMarginX = artWidth * 0.05; // アート幅の5%
-  logoMarginY = artHeight * 0.15; // アート高さの15%
+  logoMarginY = artHeight * 0.1; // アート高さの10%
 
   // レイヤー情報の位置をアート領域内に設定
   layerInfoX = artOriginX + 20; // アート開始位置から20px右
@@ -278,8 +278,8 @@ function calculateResponsiveSizes() {
 
   // プログレスバーの位置とサイズ
   progressBarX = layerInfoX;
-  progressBarY = layerInfoY + 70; // レイヤー情報から70px下
-  progressBarWidth = artWidth * 0.3; // アート幅の30%
+  progressBarY = layerInfoY + 40; // レイヤー情報から70px下
+  progressBarWidth = artWidth * 0.2; // アート幅の30%
   progressBarHeight = artHeight * 0.015; // アート高さの1.5%
 }
 
