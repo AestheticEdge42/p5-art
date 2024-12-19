@@ -236,7 +236,7 @@ function setup() {
 function calculateResponsiveSizes() {
   // マージンを5%に設定
   marginX = width * 0.05;
-  marginY = height * 0.15;
+  marginY = height * 0.05;
 
   // 一時的なアート幅と高さを計算
   let tempArtWidth = width - 2 * marginX;
@@ -253,7 +253,7 @@ function calculateResponsiveSizes() {
 
   // アート領域の開始位置（左上）
   artOriginX = (width - artWidth) / 2;
-  artOriginY = (height - artHeight) / 1;
+  artOriginY = (height - artHeight) / 2;
 
   // ブラシサイズのスケーリング
   brushScale = min(artWidth, artHeight) / 1000;
