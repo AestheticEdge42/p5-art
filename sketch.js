@@ -41,7 +41,7 @@ let prevAngle = 0;
 
 // 使用するフォント
 let font;
-let fontLoaded = false; // グローバルに移動
+let fontLoaded = false; // グローバルスコープに移動
 
 // 上部と下部のスクロールテキストオブジェクト
 let topScrollingText;
