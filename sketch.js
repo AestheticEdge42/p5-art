@@ -131,12 +131,20 @@ class ScrollingText {
     this.size = size; // テキストサイズ
     this.reverseScroll = reverseScroll; // 逆方向にスクロールするかどうか
 
-    // テキストを点に変換
-    this.points = font.textToPoints(this.text, 0, 0, this.size, {
-      sampleFactor: 0.7,
-      simplifyThreshold: 0
-    });
-    this.textWidthValue = this.getTextWidth(); // テキストの幅を取得
+    // フォントがロードされているか確認
+    if (fontLoaded) {
+      // テキストを点に変換
+      this.points = font.textToPoints(this.text, 0, 0, this.size, {
+        sampleFactor: 0.7,
+        simplifyThreshold: 0
+      });
+      this.textWidthValue = this.getTextWidth(); // テキストの幅を取得
+    } else {
+      this.points = [];
+      this.textWidthValue = 0;
+      console.warn('Font not loaded. ScrollingText points are empty.');
+    }
+
     this.x = 0; // 現在のX位置
     this.gap = 200; // テキスト間のギャップ
     // 各点の状態（点が表示されているかどうか）
@@ -200,6 +208,9 @@ class ScrollingText {
   }
 }
 
+// フォントがロードされたかどうかのフラグ
+let fontLoaded = false;
+
 function preload() {
   // 画像の読み込み
   img = loadImage(imgNames[imgIndex], () => {
@@ -216,27 +227,38 @@ function preload() {
     console.error('Failed to load the logo image.');
   });
 
-  // フォントの読み込み（ローカルホストの場合）
-  font = loadFont('assets/fonts/sourcecodepro-regular.otf', 
-    console.log('Font loaded successfully.');
-  }, () => {
-    console.error('Failed to load the font.');
-  });
+  // フォントの読み込み
+  font = loadFont('assets/fonts/SourceCodePro-Regular.ttf', 
+    () => { 
+      console.log('Font loaded successfully.');
+      fontLoaded = true;
+    },
+    () => {
+      console.error('Failed to load the font.');
+      fontLoaded = false;
+    }
+  );
 }
 
 function setup() {
   calculateResponsiveSizes();
   // キャンバスの作成
-  createCanvas(windowWidth*0.6, windowWidth / aspectRatio + extraCanvasSpace);
+  createCanvas(windowWidth * 0.6, windowWidth / aspectRatio + extraCanvasSpace);
   colorMode(HSB, 255);
-  textFont(font);
+  
+  // フォントがロードされている場合のみフォントを設定
+  if (fontLoaded) {
+    textFont(font);
+  } else {
+    textFont('Arial'); // デフォルトフォントを使用
+  }
 
   // ブラシレイヤー用のグラフィックスオブジェクトを作成
   brushLayer = createGraphics(width, height - extraCanvasSpace);
   brushLayer.colorMode(HSB, 255);
   brushLayer.clear();
 
-  if (img) {
+  if (imgLoaded) {
     img.loadPixels();
   }
 
@@ -297,7 +319,7 @@ function calculateResponsiveSizes() {
 function windowResized() {
   calculateResponsiveSizes();
   // キャンバスサイズをリサイズ
-  resizeCanvas(windowWidth, windowWidth / aspectRatio + extraCanvasSpace);
+  resizeCanvas(windowWidth * 0.6, windowWidth / aspectRatio + extraCanvasSpace);
 
   // ブラシレイヤーをリサイズ
   if (brushLayer) {
@@ -451,7 +473,7 @@ function displayInstructions() {
   }
 
   let lines = displayText.split('\n');
-  text(lines.join('\n'), width/2, instructionsY + instructionsHeight/2);
+  text(lines.join('\n'), width / 2, instructionsY + instructionsHeight / 2);
 
   // 虹色明滅ライン("To start the art...")はintro/transition時のみ表示
   if (state !== 'art') {
@@ -462,9 +484,9 @@ function displayInstructions() {
       fill(rainbowHue, 155, 255);
       // 行のY計算
       let lineHeight = introTextSize * 1.5;
-      let textBlockY = instructionsY + instructionsHeight/2;
-      let rainbowY = textBlockY - (lineHeight * (lines.length/2 - rainbowLineIndex - 0.5));
-      text(lines[rainbowLineIndex], width/2, rainbowY);
+      let textBlockY = instructionsY + instructionsHeight / 2;
+      let rainbowY = textBlockY - (lineHeight * (lines.length / 2 - rainbowLineIndex - 0.5));
+      text(lines[rainbowLineIndex], width / 2, rainbowY);
     }
   }
   pop();
