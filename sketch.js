@@ -656,7 +656,7 @@ function brushMediumStroke(strokeColor, strokeLength) {
   brushLayer.strokeWeight(random(0.01, 0.05) * brushScale);
   for (let i = 0; i < 5; i++) {
     let offset = random(-strokeLength / 4, strokeLength / 4) * brushScale;
-    brushLayer.line(-strokeLength / 1 * brushScale + offset, offset, strokeLength / 1 * brushScale + offset, offset);
+    brushLayer.line(-strokeLength / 10 * brushScale + offset, offset, strokeLength / 10 * brushScale + offset, offset);
   }
 }
 
@@ -665,7 +665,7 @@ function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.strokeWeight(random(0.05, 0.5) * brushScale);
   brushLayer.noFill();
   brushLayer.ellipse(0, 0, strokeLength * 0.02 * brushScale, strokeLength * 0.02 * brushScale);
-  brushLayer.line(-strokeLength / 4 * brushScale, 0, strokeLength / 4 * brushScale, 0);
+  brushLayer.line(-strokeLength / 20 * brushScale, 0, strokeLength / 20 * brushScale, 0);
 }
 
 function mousePressed() {
