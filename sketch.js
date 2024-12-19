@@ -21,7 +21,7 @@ let hueRange = 30;
 // ロゴ画像
 let logo;
 // 画像のアスペクト比
-let aspectRatio;
+let aspectRatio = 16 / 9; // デフォルトのアスペクト比
 // フィルターが適用されたかどうかのフラグ
 let filterApplied = false;
 // フィルターの高さ
@@ -172,7 +172,7 @@ class ScrollingText {
 
     // 点の点滅をランダムに制御
     this.dots.forEach(dot => {
-      if (random(1) < 0.02) {
+      if (random(1) < 0.02) { // 点滅確率を調整
         dot.on = !dot.on;
       }
     });
@@ -230,12 +230,12 @@ function preload() {
 function setup() {
   calculateResponsiveSizes();
   // キャンバスの作成
-  createCanvas(windowWidth, windowWidth / aspectRatio + extraCanvasSpace);
+  createCanvas(windowWidth, artHeight + extraCanvasSpace);
   colorMode(HSB, 255);
   textFont(font);
 
   // ブラシレイヤー用のグラフィックスオブジェクトを作成
-  brushLayer = createGraphics(width, windowWidth / aspectRatio);
+  brushLayer = createGraphics(width, artHeight);
   brushLayer.colorMode(HSB, 255);
   brushLayer.clear();
 
@@ -252,7 +252,7 @@ function setup() {
                                        false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          height - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                          artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
                                           2, 
                                           color(bottomTextColor), 
                                           textSizeBottom, 
@@ -268,7 +268,7 @@ function setup() {
 
 function calculateResponsiveSizes() {
   // レスポンシブなサイズを計算
-  let artHeight = windowWidth / aspectRatio;
+  artHeight = windowWidth / aspectRatio; // グローバル変数として宣言
   extraCanvasSpace = artHeight * 0.125; // 12.5%の追加スペース
   topAreaHeight = artHeight * 0.1; // 10%のテキスト領域
   bottomAreaHeight = artHeight * 0.1;
@@ -278,7 +278,7 @@ function calculateResponsiveSizes() {
 
   // ロゴのサイズとマージンを計算
   logoWidth = width * 0.08;
-  if (logo.width !== 0 && logo.height !== 0) {
+  if (logo && logo.width !== 0 && logo.height !== 0) {
     logoHeight = logo.height * (logoWidth / logo.width);
   } else {
     logoHeight = logoWidth; // デフォルト値
@@ -300,13 +300,13 @@ function calculateResponsiveSizes() {
 function windowResized() {
   calculateResponsiveSizes();
   // キャンバスサイズをリサイズ
-  resizeCanvas(windowWidth, windowWidth / aspectRatio + extraCanvasSpace);
+  resizeCanvas(windowWidth, artHeight + extraCanvasSpace);
 
   // ブラシレイヤーをリサイズ
   if (brushLayer) {
     let oldBrush = brushLayer.get();
-    brushLayer.resizeCanvas(width, height - extraCanvasSpace);
-    brushLayer.image(oldBrush, 0, 0, width, height - extraCanvasSpace);
+    brushLayer.resizeCanvas(width, artHeight);
+    brushLayer.image(oldBrush, 0, 0, width, artHeight);
   } else {
     console.error('brushLayerが定義されていません。');
   }
@@ -320,7 +320,7 @@ function windowResized() {
                                        false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          height - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                          artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
                                           2, 
                                           color(bottomTextColor), 
                                           textSizeBottom, 
@@ -338,8 +338,6 @@ function setupInstructions() {
   introTextSize = dim * instructionsBaseTextSizeFactor * instructionScale; 
   instructionsHeight = height * instructionsHeightFactor;
 
-  let artHeight = windowWidth / aspectRatio;
-  
   if (state === "intro") {
     instructionsY = (height - instructionsHeight) / 2;
   }
@@ -350,8 +348,6 @@ function setupInstructions() {
 function draw() {
   background(0);
 
-  let artHeight = width / aspectRatio;
-
   if (imgLoaded) {
     // 背景の色相オフセットを更新
     backgroundHueOffset = (backgroundHueOffset + 0.1) % 255;
@@ -360,7 +356,7 @@ function draw() {
     // ブラシアートを描画
     drawBrushArt();
     // ブラシレイヤーをキャンバスに表示
-    image(brushLayer, 0, 0, width, height - extraCanvasSpace);
+    image(brushLayer, 0, 0, width, artHeight);
 
     // 上部テキスト領域の背景を描画
     noStroke();
@@ -486,8 +482,6 @@ function drawBackgroundGradient() {
 }
 
 function drawBrushArt() {
-  let artHeight = width / aspectRatio;
-
   // マウスの移動速度を計算
   mouseSpeed = dist(mouseX, mouseY, prevMouseX, prevMouseY);
   if (mouseSpeed > 0) {
@@ -599,9 +593,11 @@ function drawFilterOverArt(artHeight) {
 
 function drawLogoOnArt(artHeight) {
   // アートの上にロゴを描画
-  let xPosition = width - logoWidth - logoMarginX;
-  let yPosition = artHeight - logoHeight - logoMarginY;
-  image(logo, xPosition, yPosition, logoWidth, logoHeight);
+  if (logoLoaded()) {
+    let xPosition = width - logoWidth - logoMarginX;
+    let yPosition = artHeight - logoHeight - logoMarginY;
+    image(logo, xPosition, yPosition, logoWidth, logoHeight);
+  }
 }
 
 function displayLayerInfo() {
@@ -622,7 +618,7 @@ function displayLayerInfo() {
   pop();
 
   // プログレスバーの進捗を計算
-  let progress = (layerFrameCount / maxLayerFrames) * 150;
+  let progress = (layerFrameCount / maxLayerFrames) * 100;
   progress = constrain(progress, 0, 100);
 
   push();
@@ -658,7 +654,6 @@ function displayLayerInfo() {
   }
 }
 
-// 細いストロークを描画する関数
 function brushFineStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
   brushLayer.strokeWeight(random(0.5, 1));
@@ -671,7 +666,6 @@ function brushFineStroke(strokeColor, strokeLength) {
   brushLayer.endShape(CLOSE);
 }
 
-// 中くらいのストロークを描画する関数
 function brushMediumStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
   brushLayer.strokeWeight(random(1, 3));
@@ -681,7 +675,6 @@ function brushMediumStroke(strokeColor, strokeLength) {
   }
 }
 
-// 大きいストロークを描画する関数
 function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
   brushLayer.strokeWeight(random(3, 5));
@@ -690,7 +683,6 @@ function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.line(-strokeLength / 2, 0, strokeLength / 2, 0);
 }
 
-// マウスがクリックされたときの処理
 function mousePressed() {
   if (state === "intro") {
     // イントロ状態からトランジション状態へ移行
@@ -739,5 +731,117 @@ function mousePressed() {
     }, () => {
       console.error('Failed to load the next image.');
     });
+  }
+}
+
+function windowResized() {
+  calculateResponsiveSizes();
+  // キャンバスサイズをリサイズ
+  resizeCanvas(windowWidth, artHeight + extraCanvasSpace);
+
+  // ブラシレイヤーをリサイズ
+  if (brushLayer) {
+    let oldBrush = brushLayer.get();
+    brushLayer.resizeCanvas(width, artHeight);
+    brushLayer.image(oldBrush, 0, 0, width, artHeight);
+  } else {
+    console.error('brushLayerが定義されていません。');
+  }
+
+  // スクロールテキストを再設定
+  topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
+                                       topAreaHeight / 2 + textSizeTop / 3, 
+                                       2, 
+                                       color(topTextColor), 
+                                       textSizeTop, 
+                                       false);
+
+  bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
+                                          artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                          2, 
+                                          color(bottomTextColor), 
+                                          textSizeBottom, 
+                                          true);
+
+  // インストラクションを再設定
+  setupInstructions();
+  if (state === "art") {
+    instructionsY = instructionsTargetY; 
+  }
+}
+
+function drawFilterOverArt(artHeight) {
+  // アートの上にフィルターを描画
+  let filterBuffer = createGraphics(width, artHeight);
+  filterBuffer.clear();
+  for (let y = artHeight - filterHeight; y < artHeight; y++) {
+    let alpha = map(y, artHeight - filterHeight, artHeight, 0, 55);
+    filterBuffer.noStroke();
+    filterBuffer.fill(0, alpha);
+    filterBuffer.rect(0, y, width, 1);
+  }
+  image(filterBuffer, 0, 0);
+}
+
+function drawLogoOnArt(artHeight) {
+  // ロゴがロードされている場合に描画
+  if (logo && logo.width !== 0 && logo.height !== 0) {
+    let xPosition = width - logoWidth - logoMarginX;
+    let yPosition = artHeight - logoHeight - logoMarginY;
+    image(logo, xPosition, yPosition, logoWidth, logoHeight);
+  }
+}
+
+function displayLayerInfo() {
+  push();
+  noStroke();
+  fill(0, 180); 
+  // レイヤー情報の背景パネルを描画
+  rect(layerInfoX, layerInfoY + 20, 300, 120, 10);
+  pop();
+
+  push();
+  fill(255);
+  textAlign(LEFT, TOP);
+  textSize(20);
+  // レイヤー情報テキスト（Framesは削除）
+  let layerInfo = `Layer: ${imgIndex + 1}/${imgNames.length}`;
+  text(layerInfo, layerInfoX + 90, layerInfoY + 30);
+  pop();
+
+  // プログレスバーの進捗を計算
+  let progress = (layerFrameCount / maxLayerFrames) * 100;
+  progress = constrain(progress, 0, 100);
+
+  push();
+  // プログレスバーの背景
+  fill(255, 50);
+  rect(progressBarX + 50, progressBarY - 5, progressBarWidth, progressBarHeight, 5);
+
+  // プログレスバーの進捗部分
+  fill(0, 255, 0);
+  let barWidth = map(progress, 0, 100, 0, progressBarWidth);
+  rect(progressBarX + 50, progressBarY - 5, barWidth, progressBarHeight, 5);
+  pop();
+
+  // プログレスが100以上の場合、虹色でメッセージを表示
+  if (progress >= 100) {
+    push();
+    textAlign(CENTER, CENTER);
+    textSize(15);
+    // 虹色の色相を更新
+    rainbowHue = (rainbowHue + 4) % 255;
+    fill(rainbowHue, 155, 255);
+    // メッセージを表示
+    text(nextLayerMessage, layerInfoX + 150, layerInfoY + 110);
+    pop();
+  } else {
+    // プログレスが100未満の場合、「Now loading」を白文字で表示
+    push();
+    textAlign(CENTER, CENTER);
+    textSize(15);
+    fill(255); // 白色
+    text("Now loading", layerInfoX + 150, layerInfoY + 110);
+    pop();
   }
 }
