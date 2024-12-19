@@ -236,7 +236,7 @@ function setup() {
 function calculateResponsiveSizes() {
   // マージンを5%に設定
   marginX = width * 0.05;
-  marginY = height * 0.25;
+  marginY = height * 0.15;
 
   // 一時的なアート幅と高さを計算
   let tempArtWidth = width - 2 * marginX;
