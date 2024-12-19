@@ -212,7 +212,7 @@ function setup() {
 
   // スクロールテキストオブジェクトの作成
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                       artOriginY + topAreaHeight / 2 + textSizeTop / 3, 
+                                       artOriginY + topAreaHeight / 20 + textSizeTop / 3, 
                                        2, 
                                        color(topTextColor), 
                                        textSizeTop, 
