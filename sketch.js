@@ -9,11 +9,11 @@ let imgNames = [
 let imgIndex = 0;
 let img;
 let imgLoaded = false;
-let strokesPerFrame = 500; // パフォーマンス向上のため減少
+let strokesPerFrame = 500; 
 let hueBase = 0;
 let hueRange = 30;
 let logo;
-let aspectRatio = 16 / 9; // デフォルトのアスペクト比
+let aspectRatio = 16 / 9; 
 let filterApplied = false;
 let filterHeight;
 let logoWidth, logoHeight;
@@ -30,14 +30,13 @@ let topScrollingText;
 let bottomScrollingText;
 let topTextColor = [255, 155, 205];
 let bottomTextColor = [255, 155, 205];
-let textSizeTop;    // 後で計算
-let textSizeBottom; // 後で計算
-let topAreaHeight = 60;    // 黒帯の高さ
-let bottomAreaHeight = 60; // 黒帯の高さ
+let textSizeTop;    
+let textSizeBottom; 
+let topAreaHeight = 60;   
+let bottomAreaHeight = 60;
 
-// デザイン的バランスを取るためのテキストサイズ比率
-let textSizeTopRatio = 0.6;    // topAreaHeightに対する比率
-let textSizeBottomRatio = 0.5; // bottomAreaHeightに対する比率
+let textSizeTopRatio = 0.6;   
+let textSizeBottomRatio = 0.5;
 
 let brushLayer;
 
@@ -50,12 +49,18 @@ let layerSaturationScale = [5.5, 3.0, 6.0, 4.0];
 let layerBrightnessScale = [1.8, 1.2, 1.0, 1.5];
 
 let layerFrameCount = 0;
-let maxLayerFrames = 700; // 元は2000
+let maxLayerFrames = 700; 
+
+// layerInfoエリアはボタン分大きくする
+// 元々 300 x 120 のような固定値だったが、Instructionボタンを入れるので高さを増やす
+// 全体をセンタリングしたいので、幅高さは固定とし、その中でテキストを中央寄せ。
+let layerInfoWidth = 300;
+let layerInfoHeight = 160; // ボタン分＋40px程度拡大
 
 let layerInfoX = 40;
 let layerInfoY = 50;
-let progressBarX = 50;
-let progressBarY = 120;
+let progressBarX = 0;
+let progressBarY = 0;
 let progressBarWidth = 200;
 let progressBarHeight = 20;
 
@@ -82,18 +87,19 @@ let instructionsY;
 let instructionsHeight;
 let introTextSize;
 let rainbowHue = 0;
-
-let instructionsTargetY;
 let overlayAlpha = 255;
 let instructionScale = 1;
 
 let nextLayerMessage = "Click to move on \nto the next art layer.";
 
-// アート領域とマージンの設定
 let marginX, marginY;
 let artWidth, artHeight;
 let artOriginX, artOriginY;
 let brushScale;
+
+let showInstructions = true; // 初期はイントロ表示中はtrue
+// Instructionボタン用の領域
+let instructionButtonX, instructionButtonY, instructionButtonW, instructionButtonH;
 
 // スクロールテキストを管理するクラス
 class ScrollingText {
@@ -106,7 +112,6 @@ class ScrollingText {
     this.size = size;
     this.reverseScroll = reverseScroll;
 
-    // テキストを点に変換
     this.points = font.textToPoints(this.text, 0, 0, this.size, {
       sampleFactor: 0.7,
       simplifyThreshold: 0
@@ -139,10 +144,8 @@ class ScrollingText {
       }
     }
 
-    // ノイズでY位置を微調整
     this.y = this.baseY + map(noise(noiseOffset), 0, 1, -3, 3);
 
-    // 点の点滅をランダムに制御
     this.dots.forEach(dot => {
       if (random(1) < 0.02) {
         dot.on = !dot.on;
@@ -172,7 +175,6 @@ class ScrollingText {
 }
 
 function preload() {
-  // 画像の読み込み
   img = loadImage(imgNames[imgIndex], () => {
     imgLoaded = true;
     aspectRatio = img.width / img.height;
@@ -180,14 +182,11 @@ function preload() {
     console.error('Failed to load the image.');
   });
 
-  // ロゴ画像の読み込み
   logo = loadImage('assets/images/Marelli_logo_BW_NEG_low.png', () => {
-    // ロゴの幅と高さは後で設定
   }, () => {
     console.error('Failed to load the logo image.');
   });
 
-  // フォントの読み込み
   font = loadFont('assets/fonts/SourceCodePro-Regular.otf', 
     () => { 
       console.log('Font loaded successfully.');
@@ -205,7 +204,6 @@ function setup() {
 
   calculateResponsiveSizes();
 
-  // ブラシレイヤーをアート領域のサイズで作成
   brushLayer = createGraphics(artWidth, artHeight);
   brushLayer.colorMode(HSB, 255);
   brushLayer.clear();
@@ -214,7 +212,6 @@ function setup() {
     img.loadPixels();
   }
 
-  // スクロールテキストオブジェクトの作成(座標は後で更新)
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
                                        artOriginY - topAreaHeight + topAreaHeight/2 + textSizeTop/3, 
                                        2, 
@@ -229,24 +226,16 @@ function setup() {
                                           textSizeBottom, 
                                           true);
 
-  // ノイズシードの設定
-  noiseSeed(noiseSeedVal);
-  background(0);
-
-  // インストラクションの設定
   setupInstructions();
 }
 
 function calculateResponsiveSizes() {
-  // マージンを5%に設定
   marginX = width * 0.05;
   marginY = height * 0.1;
 
-  // 一時的なアート幅と高さを計算
   let tempArtWidth = width - 2 * marginX;
   let tempArtHeight = tempArtWidth / aspectRatio;
 
-  // アート領域のサイズをウィンドウサイズに合わせて調整
   if (tempArtHeight > height - 2 * marginY) {
     artHeight = height - 2 * marginY;
     artWidth = artHeight * aspectRatio;
@@ -255,43 +244,49 @@ function calculateResponsiveSizes() {
     artHeight = tempArtHeight;
   }
 
-  // アート領域の開始位置（左上）
   artOriginX = (width - artWidth) / 2;
   artOriginY = (height - artHeight) / 2;
 
-  // ブラシサイズのスケーリング
   brushScale = min(artWidth, artHeight) / 1000;
 
-  // テキストサイズの調整(黒帯の高さに対する比率)
   textSizeTop = topAreaHeight * textSizeTopRatio;
   textSizeBottom = bottomAreaHeight * textSizeBottomRatio;
 
-  // ロゴのサイズとマージンの計算
-  logoWidth = artWidth * 0.08; // アート幅の8%
+  logoWidth = artWidth * 0.08; 
   if (logo && logo.width !== 0 && logo.height !== 0) {
     logoHeight = logo.height * (logoWidth / logo.width);
   } else {
-    logoHeight = logoWidth; // デフォルト値
+    logoHeight = logoWidth;
   }
-  logoMarginX = artWidth * 0.05; // アート幅の5%
-  logoMarginY = artHeight * 0.05; // アート高さの10%
+  logoMarginX = artWidth * 0.05; 
+  logoMarginY = artHeight * 0.05; 
 
-  // レイヤー情報の位置をアート領域内に設定
-  layerInfoX = artOriginX + 20; // アート開始位置から20px右
-  layerInfoY = artOriginY + 20; // アート開始位置から20px下
+  layerInfoX = artOriginX + 20; 
+  layerInfoY = artOriginY + 20;
 
-  // プログレスバーの位置とサイズ
-  progressBarX = layerInfoX + 30;
-  progressBarY = layerInfoY + 40;
   progressBarWidth = artWidth * 0.1; 
   progressBarHeight = artHeight * 0.02;
+
+  // layerInfoパネル内でテキストとボタンを中央に揃えるための計算
+  // layerInfoは幅layerInfoWidth, 高さlayerInfoHeightで表示する
+  // その中で、Layer情報、ProgressBar、Now loadingやNext layer message、Instructionボタンを中央揃え
+  // layerInfoの左上は(layerInfoX, layerInfoY)。
+  // 中央は (layerInfoX + layerInfoWidth/2, layerInfoY + layerInfoHeight/2)
+
+  // ProgressBarやテキストの位置は後でdisplayLayerInfo内で計算
+
+  // Instructionボタンのサイズと位置(仮)：
+  instructionButtonW = 100;
+  instructionButtonH = 30;
+  // ボタンは下部中央に配置
+  instructionButtonX = layerInfoX + (layerInfoWidth - instructionButtonW)/2;
+  instructionButtonY = layerInfoY + layerInfoHeight - instructionButtonH - 10; 
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   calculateResponsiveSizes();
 
-  // キャンバスサイズのリサイズ後、ブラシレイヤーをリサイズ
   if (brushLayer) {
     let oldBrush = brushLayer.get();
     brushLayer.resizeCanvas(artWidth, artHeight);
@@ -300,7 +295,6 @@ function windowResized() {
     console.error('brushLayerが定義されていません。');
   }
 
-  // スクロールテキストを再設定
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
                                        artOriginY - topAreaHeight + topAreaHeight/2 + textSizeTop/3, 
                                        2, 
@@ -315,40 +309,28 @@ function windowResized() {
                                           textSizeBottom, 
                                           true);
 
-  // インストラクションを再設定
   setupInstructions();
-  if (state === "art") {
-    instructionsY = instructionsTargetY; 
-  }
 }
 
 function setupInstructions() {
   let dim = min(width, height);
   introTextSize = dim * instructionsBaseTextSizeFactor * instructionScale; 
   instructionsHeight = height * instructionsHeightFactor;
-
+  // intro時に表示するが、今回はフェードアウトのみで移動はしないのでinstructionsYは中央付近固定
   if (state === "intro") {
     instructionsY = (height - instructionsHeight) / 2;
   }
-
-  // インストラクションウィンドウをbottomScrollingTextより下に配置
-  instructionsTargetY = artOriginY + artHeight + bottomAreaHeight + 20; 
 }
 
 function draw() {
   background(0);
 
   if (imgLoaded) {
-    // 背景の色相オフセットを更新
     backgroundHueOffset = (backgroundHueOffset + 0.1) % 255;
-    // 背景グラデーションを描画
     drawBackgroundGradient();
-    // ブラシアートを描画
     drawBrushArt();
-    // ブラシレイヤーをキャンバスに表示
     image(brushLayer, artOriginX, artOriginY, artWidth, artHeight);
 
-    // 上部テキスト領域の黒背景
     noStroke();
     fill(0);
     rect(artOriginX, artOriginY - topAreaHeight, artWidth, topAreaHeight);
@@ -356,7 +338,6 @@ function draw() {
     textNoiseOffsetTop += 0.01;
     textNoiseOffsetBottom += 0.01;
 
-    // 上部テキスト描画 (クリップ領域設定)
     push();
     let ctx = drawingContext;
     ctx.save();
@@ -368,16 +349,13 @@ function draw() {
     ctx.restore();
     pop();
 
-    // 下部テキスト領域の黒背景
     noStroke();
     fill(0);
     rect(artOriginX, artOriginY + artHeight, artWidth, bottomAreaHeight);
 
-    // 下部スクロールテキスト再設定
     bottomScrollingText.baseY = artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5;
     bottomScrollingText.y = bottomScrollingText.baseY;
 
-    // 下部テキスト描画 (クリップ領域設定)
     push();
     ctx = drawingContext;
     ctx.save();
@@ -389,59 +367,63 @@ function draw() {
     ctx.restore();
     pop();
 
-    // フィルターが未適用なら適用
     if (!filterApplied) {
       drawFilterOverArt(artHeight);
       filterApplied = true;
     }
 
-    // ロゴ描画
     drawLogoOnArt(artHeight);
 
     if (state === "art") displayLayerInfo();
   }
 
-  // オーバーレイの描画
+  // オーバーレイとインストラクション表示
   if (overlayAlpha > 0) {
-    push();
-    noStroke();
-    fill(0, overlayAlpha);
-    rect(0, 0, width, height);
-    pop();
-  }
-
-  // インストラクション描画
-  displayInstructions();
-
-  // 状態による処理
-  if (state === "intro") {
-    // イントロ時は待ち
-  } else if (state === "transition") {
-    instructionsY = lerp(instructionsY, instructionsTargetY, 0.05);
-    overlayAlpha = lerp(overlayAlpha, 0, 0.05);
-    instructionScale = lerp(instructionScale, 0.8, 0.05);
-
-    setupInstructions();
-    if (abs(instructionsY - instructionsTargetY) < 1 && overlayAlpha < 1) {
-      instructionsY = instructionsTargetY;
+    // stateがintro -> transition -> artとなる際にoverlayAlphaをフェードアウト
+    overlayAlpha = lerp(overlayAlpha, (state === "transition") ? 0 : overlayAlpha, 0.05);
+    if (state === "transition" && overlayAlpha < 1) {
+      // フェードアウト完了
       overlayAlpha = 0;
-      instructionScale = 0.8;
-      setupInstructions();
       state = "art";
+      showInstructions = false; // デフォルト非表示
     }
-  } else if (state === "art") {
-    layerFrameCount++;
+
+    if (overlayAlpha > 0) {
+      push();
+      noStroke();
+      fill(0, overlayAlpha);
+      rect(0, 0, width, height);
+
+      // インストラクションはshowInstructionsがtrueか、intro/transition状態でのみ表示
+      if ((state === "intro" || state === "transition") || showInstructions) {
+        displayInstructions();
+      }
+      pop();
+    } else {
+      // アート状態、かつoverlayAlpha=0のとき
+      if (showInstructions) {
+        // Instructionボタンで表示したときはオーバーレイなしで表示
+        displayInstructions();
+      }
+    }
+  } else {
+    // overlayAlpha=0でart状態の場合、showInstructionsがtrueなら背景無しでインストラクション表示
+    if (state === "art" && showInstructions) {
+      displayInstructions();
+    }
   }
 }
 
 function displayInstructions() {
   push();
   textAlign(CENTER, CENTER);
-
-  // インストラクション背景
-  fill(0, 200);
-  noStroke();
-  rect(0, instructionsY, width, instructionsHeight);
+  // showInstructionsがtrueのときは背景半透明で描画
+  // intro時はoverlayAlphaで全画面覆われているが、art時はそれがないので独自に背景を敷く
+  if (state === "art" && showInstructions) {
+    fill(0, 200);
+    noStroke();
+    rect(0, instructionsY, width, instructionsHeight);
+  }
 
   fill(255);
   textSize(introTextSize);
@@ -449,7 +431,6 @@ function displayInstructions() {
 
   let displayText = introText;
   if (state === 'art') {
-    // アート状態では"To start the art..."行を削除
     let lines = displayText.split('\n').filter(line => line !== rainbowMessage);
     displayText = lines.join('\n');
   }
@@ -457,14 +438,11 @@ function displayInstructions() {
   let lines = displayText.split('\n');
   text(lines.join('\n'), width / 2, instructionsY + instructionsHeight / 2);
 
-  // 虹色明滅ライン("To start the art...")はintro/transition時のみ表示
   if (state !== 'art') {
     let rainbowLineIndex = lines.indexOf(rainbowMessage);
     if (rainbowLineIndex >= 0) {
-      // 虹色の明滅
       rainbowHue = (rainbowHue + 4) % 255;
       fill(rainbowHue, 155, 255);
-      // 行のY計算
       let lineHeight = introTextSize * 1.5;
       let textBlockY = instructionsY + instructionsHeight / 2;
       let rainbowY = textBlockY - (lineHeight * (lines.length / 2 - rainbowLineIndex - 0.5));
@@ -522,9 +500,9 @@ function drawBrushArt() {
 
     if (imgIndex === 0) {
       if (br > 254) {
-        strokeColor = color(100, 100, 255); // 白
+        strokeColor = color(100, 100, 255);
       } else if (br < 150) {
-        strokeColor = color(0, 0, 0); // 黒
+        strokeColor = color(0, 0, 0);
       } else {
         let h = (hueBase + random(-hueRange, hueRange)) % 255;
         if (h < 0) h += 255;
@@ -532,19 +510,19 @@ function drawBrushArt() {
       }
     } else if (imgIndex === 1) {
       if (br > 128) {
-        strokeColor = color(0, 0, 255); // 白
+        strokeColor = color(0, 0, 255);
       } else {
-        strokeColor = color(0, 0, 0);   // 黒
+        strokeColor = color(0, 0, 0);
       }
     } else if (imgIndex === 2) {
       if (br > 128) {
-        strokeColor = color(0, 0, 255); // 白
+        strokeColor = color(0, 0, 255);
       } else {
-        strokeColor = color(blueColorForLayer3[0], blueColorForLayer3[1], blueColorForLayer3[2]); // 青
+        strokeColor = color(blueColorForLayer3[0], blueColorForLayer3[1], blueColorForLayer3[2]);
       }
     } else {
       if (br < 50) {
-        strokeColor = color(0, 0, 0); // 黒
+        strokeColor = color(0, 0, 0);
       } else if (br > 220) {
         continue;
       } else {
@@ -577,6 +555,8 @@ function drawBrushArt() {
 function drawFilterOverArt(artHeight) {
   let filterBuffer = createGraphics(artWidth, artHeight);
   filterBuffer.clear();
+  // filterHeightが定義されていないが、必要なら適宜値をセット
+  if (!filterHeight) filterHeight = artHeight * 0.1;
   for (let y = artHeight - filterHeight; y < artHeight; y++) {
     let alpha = map(y, artHeight - filterHeight, artHeight, 0, 55);
     filterBuffer.noStroke();
@@ -598,45 +578,61 @@ function displayLayerInfo() {
   push();
   noStroke();
   fill(0, 180); 
-  rect(layerInfoX, layerInfoY, 300, 120, 10);
+  rect(layerInfoX, layerInfoY, layerInfoWidth, layerInfoHeight, 10);
   pop();
 
+  // 中央座標
+  let centerX = layerInfoX + layerInfoWidth / 2;
+  let centerY = layerInfoY + layerInfoHeight / 2;
+
+  // Layer info
   push();
   fill(255);
-  textAlign(LEFT, TOP);
+  textAlign(CENTER, CENTER);
   textSize(20);
-  let layerInfo = `Layer: ${imgIndex + 1}/${imgNames.length}`;
-  text(layerInfo, layerInfoX + 90, layerInfoY + 10);
+  // Layer情報は上部に配置
+  let layerInfoText = `Layer: ${imgIndex + 1}/${imgNames.length}`;
+  text(layerInfoText, centerX, layerInfoY + 30);
   pop();
 
+  // Progress
   let progress = (layerFrameCount / maxLayerFrames) * 100;
   progress = constrain(progress, 0, 100);
-
+  let barX = centerX - progressBarWidth / 2;
+  let barY = layerInfoY + 60; 
   push();
   fill(255, 50);
-  rect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5);
-
+  rect(barX, barY, progressBarWidth, progressBarHeight, 5);
   fill(0, 255, 0);
   let barWidth = map(progress, 0, 100, 0, progressBarWidth);
-  rect(progressBarX, progressBarY, barWidth, progressBarHeight, 5);
+  rect(barX, barY, barWidth, progressBarHeight, 5);
   pop();
 
+  // Next layer message or Now loading
+  push();
+  textAlign(CENTER, CENTER);
+  textSize(15);
+  fill(255);
+  let messageY = barY + 40;
   if (progress >= 100) {
-    push();
-    textAlign(CENTER, CENTER);
-    textSize(15);
     rainbowHue = (rainbowHue + 4) % 255;
     fill(rainbowHue, 155, 255);
-    text(nextLayerMessage, layerInfoX + 150, layerInfoY + 80);
-    pop();
+    text(nextLayerMessage, centerX, messageY);
   } else {
-    push();
-    textAlign(CENTER, CENTER);
-    textSize(15);
-    fill(255);
-    text("Now loading", layerInfoX + 150, layerInfoY + 80);
-    pop();
+    text("Now loading", centerX, messageY);
   }
+  pop();
+
+  // Instructionボタン表示
+  push();
+  textAlign(CENTER, CENTER);
+  textSize(15);
+  // ボタン背景
+  fill(0, 100);
+  rect(instructionButtonX, instructionButtonY, instructionButtonW, instructionButtonH, 5);
+  fill(255);
+  text("Instruction", instructionButtonX + instructionButtonW/2, instructionButtonY + instructionButtonH/2);
+  pop();
 }
 
 function brushFineStroke(strokeColor, strokeLength) {
@@ -670,12 +666,21 @@ function brushLargeStroke(strokeColor, strokeLength) {
 
 function mousePressed() {
   if (state === "intro") {
+    // フェードアウトを開始
     state = "transition";
     return;
   }
 
   if (state === "art") {
-    // 次のレイヤーへ
+    // Instructionボタンがクリックされたか判定
+    if (mouseX >= instructionButtonX && mouseX <= instructionButtonX + instructionButtonW &&
+        mouseY >= instructionButtonY && mouseY <= instructionButtonY + instructionButtonH) {
+      // Instructionボタンクリックでインストラクション表示トグル
+      showInstructions = !showInstructions;
+      return;
+    }
+
+    // その他のクリックで次のレイヤーへ
     imgIndex = (imgIndex + 1) % imgNames.length;
     imgLoaded = false;
 
