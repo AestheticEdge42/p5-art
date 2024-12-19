@@ -9,7 +9,7 @@ let imgNames = [
 let imgIndex = 0;
 let img;
 let imgLoaded = false;
-let strokesPerFrame = 1500;
+let strokesPerFrame = 300; // パフォーマンス向上のため減少
 let hueBase = 0;
 let hueRange = 30;
 let logo;
