@@ -39,10 +39,6 @@ let mouseSpeed = 0;
 // 前回の角度
 let prevAngle = 0;
 
-// 使用するフォント
-let font;
-let fontLoaded = false; // グローバルスコープに移動
-
 // 上部と下部のスクロールテキストオブジェクト
 let topScrollingText;
 let bottomScrollingText;
@@ -121,7 +117,7 @@ let instructionScale = 1; // テキストのスケール
 // 次のレイヤーへ進む際のメッセージ（改行を含む）
 let nextLayerMessage = "Click to move on \nto the next art layer.";
 
-// スクロールテキストを管理するクラス
+// スクロールテキストを管理するクラス（textToPointsを使用しない）
 class ScrollingText {
   constructor(text, y, speed, color, size, reverseScroll = false) {
     this.text = text;
@@ -132,83 +128,70 @@ class ScrollingText {
     this.size = size; // テキストサイズ
     this.reverseScroll = reverseScroll; // 逆方向にスクロールするかどうか
 
-    // フォントがロードされているか確認
-    if (fontLoaded) {
-      // テキストを点に変換
-      this.points = font.textToPoints(this.text, 0, 0, this.size, {
-        sampleFactor: 0.7,
-        simplifyThreshold: 0
-      });
-      this.textWidthValue = this.getTextWidth(); // テキストの幅を取得
-    } else {
-      this.points = [];
-      this.textWidthValue = 0;
-      console.warn('Font not loaded. ScrollingText points are empty.');
-    }
-
     this.x = 0; // 現在のX位置
     this.gap = 200; // テキスト間のギャップ
-    // 各点の状態（点が表示されているかどうか）
-    this.dots = this.points.map(p => ({
-      x: p.x,
-      y: p.y,
-      on: true
-    }));
-  }
 
-  // テキストの幅を計算する関数
-  getTextWidth() {
-    if (fontLoaded) {
-      let bounds = font.textBounds(this.text, 0, 0, this.size);
-      return bounds.w;
-    }
-    return 0;
+    // 点滅のためのタイマー
+    this.blinkTimer = 0;
+    this.blinkInterval = 60; // フレーム数ごとに点滅
+    this.visible = true;
   }
 
   // テキストの更新処理
   update(noiseOffset) {
     if (this.reverseScroll) {
       this.x += this.speed;
-      if (this.x > (this.textWidthValue + this.gap)) {
-        this.x = 0;
+      if (this.x > (width + this.gap)) {
+        this.x = -this.gap;
       }
     } else {
       this.x -= this.speed;
-      if (this.x < -(this.textWidthValue + this.gap)) {
-        this.x = 0;
+      if (this.x < -(textWidth(this.text) + this.gap)) {
+        this.x = width + this.gap;
       }
     }
 
     // ノイズを利用してY位置を微調整
     this.y = this.baseY + map(noise(noiseOffset), 0, 1, -3, 3);
 
-    // 点の点滅をランダムに制御
-    this.dots.forEach(dot => {
-      if (random(1) < 0.02) {
-        dot.on = !dot.on;
-      }
-    });
+    // 点滅のタイマーを更新
+    this.blinkTimer++;
+    if (this.blinkTimer > this.blinkInterval) {
+      this.visible = !this.visible;
+      this.blinkTimer = 0;
+    }
   }
 
   // テキストの表示処理
   display() {
-    push();
-    translate(this.x, this.y);
-    fill(this.color);
-    noStroke();
-    for (let dot of this.dots) {
-      if (dot.on) ellipse(dot.x, dot.y, 3, 3);
+    if (this.visible) {
+      push();
+      fill(this.color);
+      noStroke();
+      textSize(this.size);
+      textAlign(CENTER, CENTER);
+      text(this.text, this.x, this.y);
+      pop();
     }
-    pop();
 
-    push();
-    translate(this.x + (this.reverseScroll ? -(this.textWidthValue + this.gap) : (this.textWidthValue + this.gap)), this.y);
-    fill(this.color);
-    noStroke();
-    for (let dot of this.dots) {
-      if (dot.on) ellipse(dot.x, dot.y, 3, 3);
+    // もう一つのテキストを描画して連続スクロールを実現
+    if (this.reverseScroll) {
+      push();
+      fill(this.color);
+      noStroke();
+      textSize(this.size);
+      textAlign(CENTER, CENTER);
+      text(this.text, this.x + textWidth(this.text) + this.gap, this.y);
+      pop();
+    } else {
+      push();
+      fill(this.color);
+      noStroke();
+      textSize(this.size);
+      textAlign(CENTER, CENTER);
+      text(this.text, this.x - textWidth(this.text) - this.gap, this.y);
+      pop();
     }
-    pop();
   }
 }
 
@@ -229,18 +212,8 @@ function preload() {
     console.error('Failed to load the logo image.');
   });
 
-  // フォントの読み込み
-  font = loadFont('assets/fonts/SourceCodePro-Regular.ttf', 
-    () => { 
-      console.log('Font loaded successfully.');
-      fontLoaded = true;
-    },
-    () => {
-      console.error('Failed to load the font.');
-      fontLoaded = false;
-    }
-  );
-} // preload 関数を正しく閉じる
+  // フォントの読み込みは不要（CSSフォントを使用）
+}
 
 function setup() {
   calculateResponsiveSizes();
@@ -248,12 +221,10 @@ function setup() {
   createCanvas(windowWidth * 0.6, windowWidth / aspectRatio + extraCanvasSpace);
   colorMode(HSB, 255);
   
-  // フォントがロードされている場合のみフォントを設定
-  if (fontLoaded) {
-    textFont(font);
-  } else {
-    textFont('Arial'); // デフォルトフォントを使用
-  }
+  // フォントの設定（CSSフォントを使用）
+  textFont('Source Code Pro');
+  textSizeTop = artHeight * 0.03; // テキストサイズトップ
+  textSizeBottom = artHeight * 0.02; // テキストサイズボトム
 
   // ブラシレイヤー用のグラフィックスオブジェクトを作成
   brushLayer = createGraphics(width, height - extraCanvasSpace);
@@ -266,14 +237,14 @@ function setup() {
 
   // 上部と下部のスクロールテキストオブジェクトを作成
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                       topAreaHeight / 2 + textSizeTop / 3, 
+                                       topAreaHeight / 2, 
                                        2, 
                                        color(topTextColor), 
                                        textSizeTop, 
                                        false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          height - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                          height - bottomAreaHeight / 2, 
                                           2, 
                                           color(bottomTextColor), 
                                           textSizeBottom, 
@@ -334,14 +305,14 @@ function windowResized() {
 
   // スクロールテキストを再設定
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                       topAreaHeight / 2 + textSizeTop / 3, 
+                                       topAreaHeight / 2, 
                                        2, 
                                        color(topTextColor), 
                                        textSizeTop, 
                                        false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                          height - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                          height - bottomAreaHeight / 2, 
                                           2, 
                                           color(bottomTextColor), 
                                           textSizeBottom, 
@@ -401,7 +372,7 @@ function draw() {
     rect(0, artHeight - bottomAreaHeight, width, bottomAreaHeight);
 
     // 下部スクロールテキストの位置を調整
-    bottomScrollingText.baseY = artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5;
+    bottomScrollingText.baseY = artHeight - bottomAreaHeight / 2;
     bottomScrollingText.y = bottomScrollingText.baseY;
     bottomScrollingText.update(textNoiseOffsetBottom);
     bottomScrollingText.display();
@@ -742,14 +713,14 @@ function mousePressed() {
 
       // スクロールテキストを再設定
       topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
-                                           topAreaHeight / 2 + textSizeTop / 3, 
+                                           topAreaHeight / 2, 
                                            2, 
                                            color(topTextColor), 
                                            textSizeTop, 
                                            false);
 
       bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
-                                              artHeight - bottomAreaHeight / 2 - textSizeBottom / 3.5, 
+                                              artHeight - bottomAreaHeight / 2, 
                                               2, 
                                               color(bottomTextColor), 
                                               textSizeBottom, 
