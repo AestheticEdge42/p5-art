@@ -240,7 +240,7 @@ function setup() {
 function calculateResponsiveSizes() {
   // マージンを5%に設定
   marginX = width * 0.05;
-  marginY = height * 0.2;
+  marginY = height * 0.1;
 
   // 一時的なアート幅と高さを計算
   let tempArtWidth = width - 2 * marginX;
@@ -281,7 +281,7 @@ function calculateResponsiveSizes() {
   layerInfoY = artOriginY + 20; // アート開始位置から20px下
 
   // プログレスバーの位置とサイズ
-  progressBarX = layerInfoX;
+  progressBarX = layerInfoX + 40;
   progressBarY = layerInfoY + 40;
   progressBarWidth = artWidth * 0.2; 
   progressBarHeight = artHeight * 0.015;
@@ -627,14 +627,14 @@ function displayLayerInfo() {
     textSize(15);
     rainbowHue = (rainbowHue + 4) % 255;
     fill(rainbowHue, 155, 255);
-    text(nextLayerMessage, layerInfoX + 150, layerInfoY + 70);
+    text(nextLayerMessage, layerInfoX + 150, layerInfoY + 80);
     pop();
   } else {
     push();
     textAlign(CENTER, CENTER);
     textSize(15);
     fill(255);
-    text("Now loading", layerInfoX + 150, layerInfoY + 60);
+    text("Now loading", layerInfoX + 150, layerInfoY + 80);
     pop();
   }
 }
