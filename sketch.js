@@ -217,7 +217,7 @@ function preload() {
   });
 
   // フォントの読み込み（ローカルホストの場合）
-  font = loadFont('assets/fonts/SourceCodePro-Regular.otf', () => {
+  font = loadFont('assets/fonts/SourceCodePro-Regular.ttf', () => {
     console.log('Font loaded successfully.');
   }, () => {
     console.error('Failed to load the font.');
