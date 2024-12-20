@@ -508,30 +508,32 @@ function draw() {
   }
 
   // 画像を保存中でなければUIの描画
-  if (!savingImage) {
-    // イントロやトランジション中の場合のオーバーレイとインストラクションの表示
+if (!savingImage) {
     if ((state === "intro" || state === "transition") && overlayAlpha > 0) {
-      push();
-      noStroke();
-      fill(0, overlayAlpha); // オーバーレイの色と透明度を設定
-      rect(0, 0, width, height); // オーバーレイを描画
-      displayInstructions(); // インストラクションを表示
-      pop();
+        // 初期画面やトランジション中の全画面オーバーレイ
+        push();
+        noStroke();
+        fill(0, overlayAlpha);
+        rect(0, 0, width, height);
+        displayInstructions();
+        pop();
     } else if (state === "art" && showInstructions) {
-      // アート状態でインストラクションを表示
-      push();
-      fill(0, 200); // インストラクション背景の色と透明度を設定
-      noStroke();
-      rect(instructionsY, 0, width, instructionsHeight); // インストラクション背景を描画
-      pop();
-      displayInstructions(); // インストラクションを表示
+        // アート状態でインストラクションボタンをクリックした場合の中央オーバーレイ
+        push();
+        noStroke();
+        fill(0, 200); // 背景色と透明度
+        let boxWidth = width * 0.6;  // ボックスの幅を画面幅の60%に設定
+        let boxHeight = height * 0.4; // ボックスの高さを画面高さの40%に設定
+        rect((width - boxWidth) / 2, (height - boxHeight) / 2, boxWidth, boxHeight, 20); // 中央にボックスを描画
+        pop();
+        displayInstructions(); // インストラクションテキストを表示
     }
 
-    // アート状態でレイヤー情報を表示
     if (state === "art") {
-      displayLayerInfo(); // レイヤー情報を表示
+        displayLayerInfo();
     }
-  }
+}
+
 
   // アート状態でフレームカウントを増加
   if (state === "art") {
