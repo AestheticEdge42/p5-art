@@ -18,7 +18,7 @@ let img;
 let imgLoaded = false;
 
 // フレームごとのストローク量（ブラシの動きの密度）
-let strokesPerFrame = 600; // ストローク量
+let strokesPerFrame = 1000; // ストローク量
 
 // 色相の基準値
 let hueBase = 0;
