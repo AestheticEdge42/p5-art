@@ -434,11 +434,16 @@ function draw() {
   background(0); // 背景を黒に設定
 
   if (imgLoaded) {
-    // 背景の色相オフセットを更新
-    backgroundHueOffset = (backgroundHueOffset + 0.1) % 255;
-    drawBackgroundGradient(); // 背景のグラデーションを描画
-    drawBrushArt(); // ブラシアートを描画
-    image(brushLayer, artOriginX, artOriginY, artWidth, artHeight); // ブラシレイヤーをキャンバスに表示
+  backgroundHueOffset = (backgroundHueOffset + 0.1) % 255;
+  drawBackgroundGradient(); // 背景のグラデーションを描画
+    
+  // stateが "intro" でない場合にのみブラッシュアートを描画
+  if (state !== "intro") {
+      drawBrushArt(); // ブラシアートを描画
+  }
+    
+  image(brushLayer, artOriginX, artOriginY, artWidth, artHeight); // ブラシレイヤーをキャンバスに表示
+    
 
     // 上部エリアの黒い矩形を描画（テキスト背景用）
     noStroke();
