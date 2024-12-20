@@ -362,19 +362,20 @@ function calculateResponsiveSizes() {
   logoMarginX = artWidth * 0.05; 
   logoMarginY = artHeight * 0.05; 
 
-  // レイヤー情報ボックスの位置を設定
-  layerInfoX = artOriginX + 20; 
-  layerInfoY = artOriginY + 20;
+  // レイヤー情報ボックスの位置を設定（右側に移動）
+  layerInfoX = artOriginX + artWidth - layerInfoWidth - 20; // アートエリアの右端から20px左に配置
+  layerInfoY = artOriginY + 20; // アートエリアの上端から20px下に配置
 
-  // プログレスバーのサイズをアートサイズに基づいて設定
+  // プログレスバーのサイズはアートサイズに基づいて設定
   progressBarWidth = artWidth * 0.1; 
   progressBarHeight = artHeight * 0.02;
 
   // インストラクションボタンのサイズと位置を設定
   instructionButtonW = 100;
   instructionButtonH = 30;
-  instructionButtonX = layerInfoX + (layerInfoWidth - instructionButtonW) / 2;
-  instructionButtonY = layerInfoY + layerInfoHeight - instructionButtonH - 10; 
+  instructionButtonX = layerInfoX + (layerInfoWidth - instructionButtonW) / 2; // レイヤー情報ボックス内中央に配置
+  instructionButtonY = layerInfoY + layerInfoHeight - instructionButtonH - 10; // レイヤー情報ボックスの下部から10px上に配置
+
 }
 
 /**
