@@ -96,29 +96,20 @@ let instructionButtonX, instructionButtonY, instructionButtonW, instructionButto
 
 let savingImage = false; // SキーでUIなし画像保存フラグ
 
-// スクロールテキストを管理するクラス
 class ScrollingText {
-  constructor(text, y, speed, color, size, reverseScroll = false) {
+  constructor(text, y, speed, colorVal, size, reverseScroll = false) {
     this.text = text;
     this.baseY = y;
     this.y = y;
     this.speed = speed;
-    this.color = color;
+    this.colorVal = colorVal;
     this.size = size;
     this.reverseScroll = reverseScroll;
-
-    this.points = font.textToPoints(this.text, 0, 0, this.size, {
-      sampleFactor: 0.7,
-      simplifyThreshold: 0
-    });
+    this.points = font.textToPoints(this.text, 0, 0, this.size, { sampleFactor: 0.7, simplifyThreshold: 0 });
     this.textWidthValue = this.getTextWidth();
     this.x = 0;
     this.gap = 200;
-    this.dots = this.points.map(p => ({
-      x: p.x,
-      y: p.y,
-      on: true
-    }));
+    this.dots = this.points.map(p => ({ x: p.x, y: p.y, on: true }));
   }
 
   getTextWidth() {
@@ -129,42 +120,28 @@ class ScrollingText {
   update(noiseOffset) {
     if (this.reverseScroll) {
       this.x += this.speed;
-      if (this.x > (this.textWidthValue + this.gap)) {
-        this.x = 0;
-      }
+      if (this.x > (this.textWidthValue + this.gap)) this.x = 0;
     } else {
       this.x -= this.speed;
-      if (this.x < -(this.textWidthValue + this.gap)) {
-        this.x = 0;
-      }
+      if (this.x < -(this.textWidthValue + this.gap)) this.x = 0;
     }
-
     this.y = this.baseY + map(noise(noiseOffset), 0, 1, -3, 3);
-
-    this.dots.forEach(dot => {
-      if (random(1) < 0.02) {
-        dot.on = !dot.on;
-      }
-    });
+    this.dots.forEach(dot => { if (random(1) < 0.02) dot.on = !dot.on; });
   }
 
   display() {
     push();
     translate(this.x, this.y);
-    fill(this.color);
+    fill(this.colorVal);
     noStroke();
-    for (let dot of this.dots) {
-      if (dot.on) ellipse(dot.x, dot.y, 3, 3);
-    }
+    for (let dot of this.dots) if (dot.on) ellipse(dot.x, dot.y, 3, 3);
     pop();
 
     push();
     translate(this.x + (this.reverseScroll ? -(this.textWidthValue + this.gap) : (this.textWidthValue + this.gap)), this.y);
-    fill(this.color);
+    fill(this.colorVal);
     noStroke();
-    for (let dot of this.dots) {
-      if (dot.on) ellipse(dot.x, dot.y, 3, 3);
-    }
+    for (let dot of this.dots) if (dot.on) ellipse(dot.x, dot.y, 3, 3);
     pop();
   }
 }
@@ -173,22 +150,15 @@ function preload() {
   img = loadImage(imgNames[imgIndex], () => {
     imgLoaded = true;
     aspectRatio = img.width / img.height;
-  }, () => {
-    console.error('Failed to load the image.');
-  });
+  }, () => { console.error('Failed to load the image.'); });
 
-  logo = loadImage('assets/images/Marelli_logo_BW_NEG_low.png', () => {
-  }, () => {
+  logo = loadImage('assets/images/Marelli_logo_BW_NEG_low.png', () => {}, () => {
     console.error('Failed to load the logo image.');
   });
 
   font = loadFont('assets/fonts/SourceCodePro-Regular.otf', 
-    () => { 
-      console.log('Font loaded successfully.');
-    },
-    () => {
-      console.error('Failed to load the font.');
-    }
+    () => { console.log('Font loaded successfully.'); },
+    () => { console.error('Failed to load the font.'); }
   );
 }
 
@@ -197,30 +167,20 @@ function setup() {
   colorMode(HSB, 255);
   textFont(font);
   frameRate(30);
-
   calculateResponsiveSizes();
 
   brushLayer = createGraphics(artWidth, artHeight);
   brushLayer.colorMode(HSB, 255);
   brushLayer.clear();
-
-  if (imgLoaded) {
-    img.loadPixels();
-  }
+  if (imgLoaded) img.loadPixels();
 
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
                                        artOriginY - topAreaHeight + topAreaHeight/2 + textSizeTop/3, 
-                                       2, 
-                                       color(topTextColor), 
-                                       textSizeTop, 
-                                       false);
+                                       2, color(topTextColor), textSizeTop, false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
                                           artOriginY + artHeight + bottomAreaHeight/2 + textSizeBottom/3.5, 
-                                          2, 
-                                          color(bottomTextColor), 
-                                          textSizeBottom, 
-                                          true);
+                                          2, color(bottomTextColor), textSizeBottom, true);
 
   setupInstructions();
 }
@@ -242,7 +202,6 @@ function calculateResponsiveSizes() {
 
   artOriginX = (width - artWidth) / 2;
   artOriginY = (height - artHeight) / 2;
-
   brushScale = min(artWidth, artHeight) / 1000;
 
   textSizeTop = topAreaHeight * textSizeTopRatio;
@@ -277,23 +236,15 @@ function windowResized() {
     let oldBrush = brushLayer.get();
     brushLayer.resizeCanvas(artWidth, artHeight);
     brushLayer.image(oldBrush, 0, 0, artWidth, artHeight);
-  } else {
-    console.error('brushLayerが定義されていません。');
   }
 
   topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
                                        artOriginY - topAreaHeight + topAreaHeight/2 + textSizeTop/3, 
-                                       2, 
-                                       color(topTextColor), 
-                                       textSizeTop, 
-                                       false);
+                                       2, color(topTextColor), textSizeTop, false);
 
   bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
                                           artOriginY + artHeight + bottomAreaHeight/2 + textSizeBottom/3.5, 
-                                          2, 
-                                          color(bottomTextColor), 
-                                          textSizeBottom, 
-                                          true);
+                                          2, color(bottomTextColor), textSizeBottom, true);
 
   setupInstructions();
 }
@@ -302,23 +253,18 @@ function setupInstructions() {
   let dim = min(width, height);
   introTextSize = dim * instructionsBaseTextSizeFactor * instructionScale; 
   instructionsHeight = height * instructionsHeightFactor;
-
-  if (state === "intro") {
-    instructionsY = (height - instructionsHeight) / 2;
-  }
+  if (state === "intro") instructionsY = (height - instructionsHeight) / 2;
 }
 
 function draw() {
   background(0);
 
-  // ブラッシュアート描画
   if (imgLoaded) {
     backgroundHueOffset = (backgroundHueOffset + 0.1) % 255;
     drawBackgroundGradient();
     drawBrushArt();
     image(brushLayer, artOriginX, artOriginY, artWidth, artHeight);
 
-    // 上部テキストエリア
     noStroke();
     fill(0);
     rect(artOriginX, artOriginY - topAreaHeight, artWidth, topAreaHeight);
@@ -337,14 +283,11 @@ function draw() {
     ctx.restore();
     pop();
 
-    // 下部テキストエリア
     noStroke();
     fill(0);
     rect(artOriginX, artOriginY + artHeight, artWidth, bottomAreaHeight);
-
     bottomScrollingText.baseY = artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5;
     bottomScrollingText.y = bottomScrollingText.baseY;
-
     push();
     ctx = drawingContext;
     ctx.save();
@@ -364,7 +307,6 @@ function draw() {
     drawLogoOnArt(artHeight);
   }
 
-  // フェード処理
   if (state === "transition") {
     overlayAlpha = lerp(overlayAlpha, 0, 0.05);
     if (overlayAlpha < 1) {
@@ -374,22 +316,15 @@ function draw() {
     }
   }
 
-  // savingImageがtrueのときはUI非表示
   if (!savingImage) {
-    // インストラクション表示
-    // intro, transition時はoverlayAlphaで全画面覆い、その上にインストラクション
-    // art状態＆showInstructions=trueで表示
-    if (state === "intro" || state === "transition") {
-      if (overlayAlpha > 0) {
-        push();
-        noStroke();
-        fill(0, overlayAlpha);
-        rect(0, 0, width, height);
-        displayInstructions();
-        pop();
-      }
+    if ((state === "intro" || state === "transition") && overlayAlpha > 0) {
+      push();
+      noStroke();
+      fill(0, overlayAlpha);
+      rect(0, 0, width, height);
+      displayInstructions();
+      pop();
     } else if (state === "art" && showInstructions) {
-      // art状態でshowInstructionsがtrueなら半透明背景+インストラクション
       push();
       fill(0, 200);
       noStroke();
@@ -398,10 +333,14 @@ function draw() {
       displayInstructions();
     }
 
-    // layerInfo, progressBar, Instructionボタン表示（常に最前面）
     if (state === "art") {
       displayLayerInfo();
     }
+  }
+
+  // art状態でlayerFrameCountを増やしプログレスバーが伸びるようにする
+  if (state === "art") {
+    layerFrameCount++;
   }
 }
 
@@ -475,40 +414,26 @@ function drawBrushArt() {
     let col = color(r, g, b);
     let br = brightness(col);
     let s = saturation(col);
-
     s = min(s * layerSaturationScale[imgIndex], 255); 
     br = min(br * layerBrightnessScale[imgIndex], 255);
 
     let strokeColor;
-
     if (imgIndex === 0) {
-      if (br > 254) {
-        strokeColor = color(100, 100, 255);
-      } else if (br < 150) {
-        strokeColor = color(0, 0, 0);
-      } else {
+      if (br > 254) strokeColor = color(0,0,255);
+      else if (br < 150) strokeColor = color(0,0,0);
+      else {
         let h = (hueBase + random(-hueRange, hueRange)) % 255;
         if (h < 0) h += 255;
         strokeColor = color(h, s, br);
       }
     } else if (imgIndex === 1) {
-      if (br > 128) {
-        strokeColor = color(0, 0, 255);
-      } else {
-        strokeColor = color(0, 0, 0);
-      }
+      strokeColor = (br > 128) ? color(0,0,255) : color(0,0,0);
     } else if (imgIndex === 2) {
-      if (br > 128) {
-        strokeColor = color(0, 0, 255);
-      } else {
-        strokeColor = color(blueColorForLayer3[0], blueColorForLayer3[1], blueColorForLayer3[2]);
-      }
+      strokeColor = (br > 128) ? color(0,0,255) : color(blueColorForLayer3[0], blueColorForLayer3[1], blueColorForLayer3[2]);
     } else {
-      if (br < 50) {
-        strokeColor = color(0, 0, 0);
-      } else if (br > 220) {
-        continue;
-      } else {
+      if (br < 50) strokeColor = color(0,0,0);
+      else if (br > 220) continue;
+      else {
         let h = (hueBase + random(-hueRange, hueRange)) % 255;
         if (h < 0) h += 255;
         strokeColor = color(h, s, br);
@@ -519,15 +444,10 @@ function drawBrushArt() {
     brushLayer.translate(nx, ny);
     brushLayer.rotate(prevAngle);
     let strokeLength = map(mouseSpeed, 0, 50, 10, 50) * brushScale;
-
     let strokeType = int(random(3));
-    if (strokeType === 0) {
-      brushFineStroke(strokeColor, strokeLength);
-    } else if (strokeType === 1) {
-      brushMediumStroke(strokeColor, strokeLength);
-    } else {
-      brushLargeStroke(strokeColor, strokeLength);
-    }
+    if (strokeType === 0) brushFineStroke(strokeColor, strokeLength);
+    else if (strokeType === 1) brushMediumStroke(strokeColor, strokeLength);
+    else brushLargeStroke(strokeColor, strokeLength);
     brushLayer.pop();
   }
 
@@ -565,7 +485,6 @@ function displayLayerInfo() {
 
   let centerX = layerInfoX + layerInfoWidth / 2;
 
-  // Layer info
   push();
   fill(255);
   textAlign(CENTER, CENTER);
@@ -576,18 +495,21 @@ function displayLayerInfo() {
 
   let progress = (layerFrameCount / maxLayerFrames) * 100;
   progress = constrain(progress, 0, 100);
+
   let barX = centerX - progressBarWidth / 2;
   let barY = layerInfoY + 60; 
-
   push();
+  // 背景
   fill(255, 50);
   rect(barX, barY, progressBarWidth, progressBarHeight, 5);
-  fill(0, 255, 0);
+  // 伸びる部分(明るい緑)
+  fill(120,255,255); // HSBで明るい緑
   let barW = map(progress, 0, 100, 0, progressBarWidth);
-  rect(barX, barY, barW, progressBarHeight, 5);
+  if (barW > 0) {
+    rect(barX, barY, barW, progressBarHeight, 5);
+  }
   pop();
 
-  // Next layer message or Now loading
   push();
   textAlign(CENTER, CENTER);
   textSize(15);
@@ -602,7 +524,6 @@ function displayLayerInfo() {
   }
   pop();
 
-  // Instructionボタン
   push();
   textAlign(CENTER, CENTER);
   textSize(15);
@@ -656,7 +577,7 @@ function mousePressed() {
       return;
     }
 
-    // それ以外クリックで次のレイヤー
+    // 次のレイヤーへ
     imgIndex = (imgIndex + 1) % imgNames.length;
     imgLoaded = false;
 
@@ -674,33 +595,24 @@ function mousePressed() {
 
       topScrollingText = new ScrollingText("HAPPY NEW YEAR 2025", 
                                            artOriginY - topAreaHeight + topAreaHeight/2 + textSizeTop/3, 
-                                           2, 
-                                           color(topTextColor), 
-                                           textSizeTop, 
-                                           false);
+                                           2, color(topTextColor), textSizeTop, false);
 
       bottomScrollingText = new ScrollingText("Find your core, Aim for more", 
                                               artOriginY + artHeight + bottomAreaHeight/2 + textSizeBottom/3.5, 
-                                              2, 
-                                              color(bottomTextColor), 
-                                              textSizeBottom, 
-                                              true);
+                                              2, color(bottomTextColor), textSizeBottom, true);
 
       layerFrameCount = 0;
-    }, () => {
-      console.error('Failed to load the next image.');
-    });
+    }, () => { console.error('Failed to load the next image.'); });
   }
 }
 
 function keyPressed() {
   if (key === 'S' || key === 's') {
-    // UIを非表示して画像保存
     savingImage = true;
     noLoop();
-    redraw();  // UI非表示状態で一度描画
+    redraw();  
     saveCanvas('myArt', 'png');
     savingImage = false;
-    loop(); // 通常モードに戻る
+    loop();
   }
 }
