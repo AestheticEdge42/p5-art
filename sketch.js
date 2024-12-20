@@ -536,11 +536,11 @@ function displayLayerInfo() {
 
 function brushFineStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.0025, 0.005) * brushScale);
+  brushLayer.strokeWeight(random(0.025, 0.05) * brushScale);
   brushLayer.beginShape();
   for (let i = 0; i < 10; i++) {
     let angle = random(TWO_PI);
-    let radius = random(strokeLength * 0.001, strokeLength * 0.003) * brushScale;
+    let radius = random(strokeLength * 0.01, strokeLength * 0.03) * brushScale;
     brushLayer.vertex(cos(angle) * radius, sin(angle) * radius);
   }
   brushLayer.endShape(CLOSE);
@@ -551,7 +551,7 @@ function brushMediumStroke(strokeColor, strokeLength) {
   brushLayer.strokeWeight(random(0.01, 0.05) * brushScale);
   for (let i = 0; i < 5; i++) {
     let offset = random(-strokeLength / 4, strokeLength / 4) * brushScale;
-    brushLayer.line(-strokeLength / 5 * brushScale + offset, offset, strokeLength / 5 * brushScale + offset, offset);
+    brushLayer.line(-strokeLength / 2.5 * brushScale + offset, offset, strokeLength / 2.5 * brushScale + offset, offset);
   }
 }
 
@@ -560,7 +560,7 @@ function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.strokeWeight(random(0.05, 0.5) * brushScale);
   brushLayer.noFill();
   brushLayer.ellipse(0, 0, strokeLength * 0.02 * brushScale, strokeLength * 0.02 * brushScale);
-  brushLayer.line(-strokeLength / 10 * brushScale, 0, strokeLength / 10 * brushScale, 0);
+  brushLayer.line(-strokeLength / 5 * brushScale, 0, strokeLength / 5 * brushScale, 0);
 }
 
 function mousePressed() {
