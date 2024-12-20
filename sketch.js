@@ -99,7 +99,7 @@ let layerFrameCount = 0;
 let maxLayerFrames = 700; 
 
 // レイヤー情報ボックスのサイズと位置
-let layerInfoWidth = 270;
+let layerInfoWidth = 220;
 let layerInfoHeight = 160; // Instructionボタン分追加
 let layerInfoX = 40;
 let layerInfoY = 50;
