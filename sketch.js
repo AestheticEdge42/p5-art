@@ -670,7 +670,7 @@ function drawBrushArt() {
     brushLayer.push();
     brushLayer.translate(nx, ny); // ストロークの位置に移動
     brushLayer.rotate(prevAngle); // ストロークの角度を回転
-    let strokeLength = map(mouseSpeed, 0, 50, 10, 50) * brushScale; // ストロークの長さを計算
+    let strokeLength = map(mouseSpeed, 0, 10, 30, 90) * brushScale; // ストロークの長さを計算
     let strokeType = int(random(3)); // ストロークのタイプをランダムに選択
     if (strokeType === 0) brushFineStroke(strokeColor, strokeLength); // 細いストローク
     else if (strokeType === 1) brushMediumStroke(strokeColor, strokeLength); // 中くらいのストローク
@@ -885,7 +885,7 @@ function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.strokeWeight(random(0.05, 0.5) * brushScale); // ストロークの太さをランダムに設定
   brushLayer.noFill(); // 塗りを無効に設定
   brushLayer.ellipse(0, 0, strokeLength * 0.02 * brushScale, strokeLength * 0.02 * brushScale); // 楕円を描画
-  brushLayer.line(-strokeLength / 10 * brushScale, 0, strokeLength / 10 * brushScale, 0); // ラインを描画
+  brushLayer.line(-strokeLength / 6 * brushScale, 0, strokeLength / 6 * brushScale, 0); // ラインを描画
 }
 
 /**
