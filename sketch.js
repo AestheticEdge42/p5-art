@@ -827,7 +827,7 @@ function displayLayerInfo() {
   push();
   textAlign(CENTER, CENTER); // テキストの配置を中央揃えに設定
   textSize(15); // テキストサイズを設定
-  fill(0, 100); // ボタンの背景色と透明度を設定
+  fill(200, 255, 255, 100); // HSBで青色、完全な彩度と明度、透明度100
   rect(instructionButtonX, instructionButtonY, instructionButtonW, instructionButtonH, 5); // インストラクションボタンの背景を描画
   fill(255); // ボタンのテキスト色を白に設定
   text("Instruction", instructionButtonX + instructionButtonW / 2, instructionButtonY + instructionButtonH / 2); // ボタンのテキストを表示
