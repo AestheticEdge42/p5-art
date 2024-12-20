@@ -52,11 +52,9 @@ let layerFrameCount = 0;
 let maxLayerFrames = 700; 
 
 let layerInfoWidth = 300;
-let layerInfoHeight = 160; // Instructionボタン分高さ拡張
+let layerInfoHeight = 160; // Instructionボタン分追加
 let layerInfoX = 40;
 let layerInfoY = 50;
-let progressBarX = 200;
-let progressBarY = 150;
 let progressBarWidth = 200;
 let progressBarHeight = 20;
 
@@ -93,10 +91,10 @@ let artWidth, artHeight;
 let artOriginX, artOriginY;
 let brushScale;
 
-let showInstructions = true; // 初期はイントロ終了まで表示
+let showInstructions = true; 
 let instructionButtonX, instructionButtonY, instructionButtonW, instructionButtonH;
 
-let savingImage = false; // Sキーでの画像保存処理用フラグ
+let savingImage = false; // SキーでUIなし画像保存フラグ
 
 // スクロールテキストを管理するクラス
 class ScrollingText {
@@ -198,6 +196,7 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 255);
   textFont(font);
+  frameRate(30);
 
   calculateResponsiveSizes();
 
@@ -264,7 +263,6 @@ function calculateResponsiveSizes() {
   progressBarWidth = artWidth * 0.1; 
   progressBarHeight = artHeight * 0.02;
 
-  // Instructionボタン位置計算
   instructionButtonW = 100;
   instructionButtonH = 30;
   instructionButtonX = layerInfoX + (layerInfoWidth - instructionButtonW)/2;
@@ -313,13 +311,14 @@ function setupInstructions() {
 function draw() {
   background(0);
 
-  // ブラッシュアート表示
+  // ブラッシュアート描画
   if (imgLoaded) {
     backgroundHueOffset = (backgroundHueOffset + 0.1) % 255;
     drawBackgroundGradient();
     drawBrushArt();
     image(brushLayer, artOriginX, artOriginY, artWidth, artHeight);
 
+    // 上部テキストエリア
     noStroke();
     fill(0);
     rect(artOriginX, artOriginY - topAreaHeight, artWidth, topAreaHeight);
@@ -327,7 +326,6 @@ function draw() {
     textNoiseOffsetTop += 0.01;
     textNoiseOffsetBottom += 0.01;
 
-    // 上部テキスト
     push();
     let ctx = drawingContext;
     ctx.save();
@@ -339,7 +337,7 @@ function draw() {
     ctx.restore();
     pop();
 
-    // 下部テキスト
+    // 下部テキストエリア
     noStroke();
     fill(0);
     rect(artOriginX, artOriginY + artHeight, artWidth, bottomAreaHeight);
@@ -366,7 +364,7 @@ function draw() {
     drawLogoOnArt(artHeight);
   }
 
-  // フェード処理(イントロからアートへ)
+  // フェード処理
   if (state === "transition") {
     overlayAlpha = lerp(overlayAlpha, 0, 0.05);
     if (overlayAlpha < 1) {
@@ -376,37 +374,33 @@ function draw() {
     }
   }
 
-  // savingImageがtrueならUI非表示
+  // savingImageがtrueのときはUI非表示
   if (!savingImage) {
-    // インストラクション表示（intro,transition時はoverlayAlphaあり、art時はshowInstructionsで決定）
-    if (overlayAlpha > 0) {
-      // introまたはtransition中はオーバーレイありで表示
-      push();
-      noStroke();
-      fill(0, overlayAlpha);
-      rect(0, 0, width, height);
-
-      if (state === "intro" || state === "transition" || showInstructions) {
-        displayInstructions();
-      }
-      pop();
-    } else {
-      // art状態かつoverlayAlpha=0
-      if (state === "art" && showInstructions) {
-        // 背景半透明でインストラクション表示
+    // インストラクション表示
+    // intro, transition時はoverlayAlphaで全画面覆い、その上にインストラクション
+    // art状態＆showInstructions=trueで表示
+    if (state === "intro" || state === "transition") {
+      if (overlayAlpha > 0) {
         push();
-        fill(0, 200);
         noStroke();
-        rect(0, instructionsY, width, instructionsHeight);
-        pop();
+        fill(0, overlayAlpha);
+        rect(0, 0, width, height);
         displayInstructions();
+        pop();
       }
+    } else if (state === "art" && showInstructions) {
+      // art状態でshowInstructionsがtrueなら半透明背景+インストラクション
+      push();
+      fill(0, 200);
+      noStroke();
+      rect(0, instructionsY, width, instructionsHeight);
+      pop();
+      displayInstructions();
     }
 
-    // アート状態でlayerInfoやプログレスバー表示
+    // layerInfo, progressBar, Instructionボタン表示（常に最前面）
     if (state === "art") {
-      displayLayerInfo(); 
-      // layerInfoが一番前面にくるため、プログレスバーはここで確実に表示される
+      displayLayerInfo();
     }
   }
 }
@@ -584,6 +578,7 @@ function displayLayerInfo() {
   progress = constrain(progress, 0, 100);
   let barX = centerX - progressBarWidth / 2;
   let barY = layerInfoY + 60; 
+
   push();
   fill(255, 50);
   rect(barX, barY, progressBarWidth, progressBarHeight, 5);
@@ -607,7 +602,7 @@ function displayLayerInfo() {
   }
   pop();
 
-  // Instructionボタン表示
+  // Instructionボタン
   push();
   textAlign(CENTER, CENTER);
   textSize(15);
@@ -661,7 +656,7 @@ function mousePressed() {
       return;
     }
 
-    // それ以外のクリックで次のレイヤーへ
+    // それ以外クリックで次のレイヤー
     imgIndex = (imgIndex + 1) % imgNames.length;
     imgLoaded = false;
 
@@ -699,13 +694,13 @@ function mousePressed() {
 }
 
 function keyPressed() {
-  if (key === 'S') {
-    // SキーでUI無しの状態で画像保存
+  if (key === 'S' || key === 's') {
+    // UIを非表示して画像保存
     savingImage = true;
     noLoop();
-    redraw();  // UI無しで1回描画
+    redraw();  // UI非表示状態で一度描画
     saveCanvas('myArt', 'png');
     savingImage = false;
-    redraw(); // 通常状態に戻す
+    loop(); // 通常モードに戻る
   }
 }
