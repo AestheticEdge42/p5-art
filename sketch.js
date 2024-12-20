@@ -9,7 +9,7 @@ let imgNames = [
 let imgIndex = 0;
 let img;
 let imgLoaded = false;
-let strokesPerFrame = 500; 
+let strokesPerFrame = 600; // ストローク増やし、失敗確率減
 let hueBase = 0;
 let hueRange = 30;
 let logo;
@@ -338,7 +338,6 @@ function draw() {
     }
   }
 
-  // art状態でlayerFrameCountを増やしプログレスバーが伸びるようにする
   if (state === "art") {
     layerFrameCount++;
   }
@@ -393,22 +392,26 @@ function drawBrushArt() {
   }
 
   let noiseScale = 0.001;
+  let strokesDrawn = 0;
 
   for (let i = 0; i < strokesPerFrame; i++) {
     let nx = random(brushLayer.width);
     let ny = random(brushLayer.height);
     let nVal = noise(nx * noiseScale, ny * noiseScale, frameCount * 0.0005);
-    if (nVal < 0.3) continue;
+
+    // ノイズ判定でスキップしすぎないよう多少緩める
+    if (nVal < 0.05) continue;
 
     let x = int(map(nx, 0, brushLayer.width, 0, img.width));
     let y = int(map(ny, 0, brushLayer.height, 0, img.height));
-
     let index = (x + y * img.width) * 4;
+
     let r = img.pixels[index];
     let g = img.pixels[index + 1];
     let b = img.pixels[index + 2]; 
     let a = img.pixels[index + 3];
 
+    // 透明部分は描かない
     if (a < 10) continue;
 
     let col = color(r, g, b);
@@ -419,9 +422,11 @@ function drawBrushArt() {
 
     let strokeColor;
     if (imgIndex === 0) {
-      if (br > 254) strokeColor = color(0,0,255);
-      else if (br < 150) strokeColor = color(0,0,0);
-      else {
+      if (br > 254) {
+        strokeColor = color(100,100,255);
+      } else if (br < 150) {
+        strokeColor = color(0,0,0);
+      } else {
         let h = (hueBase + random(-hueRange, hueRange)) % 255;
         if (h < 0) h += 255;
         strokeColor = color(h, s, br);
@@ -431,9 +436,11 @@ function drawBrushArt() {
     } else if (imgIndex === 2) {
       strokeColor = (br > 128) ? color(0,0,255) : color(blueColorForLayer3[0], blueColorForLayer3[1], blueColorForLayer3[2]);
     } else {
-      if (br < 50) strokeColor = color(0,0,0);
-      else if (br > 220) continue;
-      else {
+      if (br < 50) {
+        strokeColor = color(0,0,0);
+      } else if (br > 220) {
+        continue;
+      } else {
         let h = (hueBase + random(-hueRange, hueRange)) % 255;
         if (h < 0) h += 255;
         strokeColor = color(h, s, br);
@@ -449,6 +456,66 @@ function drawBrushArt() {
     else if (strokeType === 1) brushMediumStroke(strokeColor, strokeLength);
     else brushLargeStroke(strokeColor, strokeLength);
     brushLayer.pop();
+
+    strokesDrawn++;
+  }
+
+  // もしこのフレームで一度もストロークが描かれなかった場合、
+  // 不透明ピクセルを持つランダムな点を選んで1本だけ強制的に描く
+  if (strokesDrawn === 0 && imgLoaded) {
+    for (let tries = 0; tries < 1000; tries++) {
+      let nx = random(brushLayer.width);
+      let ny = random(brushLayer.height);
+      let x = int(map(nx, 0, brushLayer.width, 0, img.width));
+      let y = int(map(ny, 0, brushLayer.height, 0, img.height));
+      let index = (x + y * img.width) * 4;
+
+      let r = img.pixels[index];
+      let g = img.pixels[index + 1];
+      let b = img.pixels[index + 2]; 
+      let a = img.pixels[index + 3];
+      if (a < 10) continue; // 不透明ピクセル探す
+
+      let col = color(r, g, b);
+      let br = brightness(col);
+      let s = saturation(col);
+      s = min(s * layerSaturationScale[imgIndex], 255); 
+      br = min(br * layerBrightnessScale[imgIndex], 255);
+
+      let strokeColor;
+      if (imgIndex === 0) {
+        if (br > 254) strokeColor = color(100,100,255);
+        else if (br < 150) strokeColor = color(0,0,0);
+        else {
+          let h = (hueBase + random(-hueRange, hueRange)) % 255;
+          if (h < 0) h += 255;
+          strokeColor = color(h, s, br);
+        }
+      } else if (imgIndex === 1) {
+        strokeColor = (br > 128) ? color(0,0,255) : color(0,0,0);
+      } else if (imgIndex === 2) {
+        strokeColor = (br > 128) ? color(0,0,255) : color(blueColorForLayer3[0], blueColorForLayer3[1], blueColorForLayer3[2]);
+      } else {
+        if (br < 50) strokeColor = color(0,0,0);
+        else if (br > 220) continue;
+        else {
+          let h = (hueBase + random(-hueRange, hueRange)) % 255;
+          if (h < 0) h += 255;
+          strokeColor = color(h, s, br);
+        }
+      }
+
+      brushLayer.push();
+      brushLayer.translate(nx, ny);
+      brushLayer.rotate(prevAngle);
+      let strokeLength = map(mouseSpeed, 0, 50, 10, 50) * brushScale;
+      let strokeType = int(random(3));
+      if (strokeType === 0) brushFineStroke(strokeColor, strokeLength);
+      else if (strokeType === 1) brushMediumStroke(strokeColor, strokeLength);
+      else brushLargeStroke(strokeColor, strokeLength);
+      brushLayer.pop();
+      break; // 1本描いたら終了
+    }
   }
 
   prevMouseX = mouseX;
@@ -505,9 +572,7 @@ function displayLayerInfo() {
   // 伸びる部分(明るい緑)
   fill(120,255,255); // HSBで明るい緑
   let barW = map(progress, 0, 100, 0, progressBarWidth);
-  if (barW > 0) {
-    rect(barX, barY, barW, progressBarHeight, 5);
-  }
+  if (barW > 0) rect(barX, barY, barW, progressBarHeight, 5);
   pop();
 
   push();
@@ -536,11 +601,11 @@ function displayLayerInfo() {
 
 function brushFineStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.03, 0.75) * brushScale);
+  brushLayer.strokeWeight(random(0.0025, 0.005) * brushScale);
   brushLayer.beginShape();
   for (let i = 0; i < 10; i++) {
     let angle = random(TWO_PI);
-    let radius = random(strokeLength * 0.01, strokeLength * 0.03) * brushScale;
+    let radius = random(strokeLength * 0.001, strokeLength * 0.003) * brushScale;
     brushLayer.vertex(cos(angle) * radius, sin(angle) * radius);
   }
   brushLayer.endShape(CLOSE);
@@ -548,19 +613,19 @@ function brushFineStroke(strokeColor, strokeLength) {
 
 function brushMediumStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.03, 0.07) * brushScale);
+  brushLayer.strokeWeight(random(0.01, 0.05) * brushScale);
   for (let i = 0; i < 5; i++) {
     let offset = random(-strokeLength / 4, strokeLength / 4) * brushScale;
-    brushLayer.line(-strokeLength / 2 * brushScale + offset, offset, strokeLength / 2 * brushScale + offset, offset);
+    brushLayer.line(-strokeLength / 5 * brushScale + offset, offset, strokeLength / 5 * brushScale + offset, offset);
   }
 }
 
 function brushLargeStroke(strokeColor, strokeLength) {
   brushLayer.stroke(strokeColor);
-  brushLayer.strokeWeight(random(0.07, 0.5) * brushScale);
+  brushLayer.strokeWeight(random(0.05, 0.5) * brushScale);
   brushLayer.noFill();
   brushLayer.ellipse(0, 0, strokeLength * 0.02 * brushScale, strokeLength * 0.02 * brushScale);
-  brushLayer.line(-strokeLength / 4 * brushScale, 0, strokeLength / 4 * brushScale, 0);
+  brushLayer.line(-strokeLength / 10 * brushScale, 0, strokeLength / 10 * brushScale, 0);
 }
 
 function mousePressed() {
