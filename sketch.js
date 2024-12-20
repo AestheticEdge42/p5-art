@@ -99,7 +99,7 @@ let layerFrameCount = 0;
 let maxLayerFrames = 700; 
 
 // レイヤー情報ボックスのサイズと位置
-let layerInfoWidth = 300;
+let layerInfoWidth = 270;
 let layerInfoHeight = 160; // Instructionボタン分追加
 let layerInfoX = 40;
 let layerInfoY = 50;
@@ -371,10 +371,10 @@ function calculateResponsiveSizes() {
   progressBarHeight = artHeight * 0.02;
 
   // インストラクションボタンのサイズと位置を設定
-  instructionButtonW = 100;
+  instructionButtonW = 150;
   instructionButtonH = 30;
   instructionButtonX = layerInfoX + (layerInfoWidth - instructionButtonW) / 2; // レイヤー情報ボックス内中央に配置
-  instructionButtonY = layerInfoY + layerInfoHeight - instructionButtonH - 10; // レイヤー情報ボックスの下部から10px上に配置
+  instructionButtonY = layerInfoY + layerInfoHeight - instructionButtonH - 8; // レイヤー情報ボックスの下部から10px上に配置
 
 }
 
