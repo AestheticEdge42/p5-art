@@ -18,7 +18,7 @@ let img;
 let imgLoaded = false;
 
 // フレームごとのストローク量（ブラシの動きの密度）
-let baseStrokesPerFrame = 600; // 基本のストローク数
+let baseStrokesPerFrame = 1000; // 基本のストローク数
 let currentStrokesPerFrame = baseStrokesPerFrame; // 現在のストローク数
 
 // 色相の基準値
@@ -928,7 +928,7 @@ function mousePressed() {
 
       // レイヤーに基づいてストローク数を更新
       if (imgIndex >= 2) { // レイヤー3と4
-        currentStrokesPerFrame = baseStrokesPerFrame * 2;
+        currentStrokesPerFrame = baseStrokesPerFrame * 3;
       } else { // レイヤー1と2
         currentStrokesPerFrame = baseStrokesPerFrame;
       }
