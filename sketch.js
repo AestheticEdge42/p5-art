@@ -18,7 +18,7 @@ let img;
 let imgLoaded = false;
 
 // フレームごとのストローク量（ブラシの動きの密度）
-let baseStrokesPerFrame = 800; // 基本のストローク数
+let baseStrokesPerFrame = 600; // 基本のストローク数
 let currentStrokesPerFrame = baseStrokesPerFrame; // 現在のストローク数
 
 // 色相の基準値
@@ -170,13 +170,9 @@ let instructionButtonX, instructionButtonY, instructionButtonW, instructionButto
 // 画像保存フラグ（SキーでUIなし画像保存）
 let savingImage = false; // SキーでUIなし画像保存フラグ
 
-// ストローク用の有効ピクセルデータ
-let validPixels = []; // 配列に {x, y, brightness, saturation} を格納
-
 /**
  * ScrollingTextクラス
  * スクロールするテキストを管理するクラス
- * direction パラメータで 'left' または 'right' を指定
  */
 class ScrollingText {
   /**
@@ -186,30 +182,24 @@ class ScrollingText {
    * @param {number} speed スクロールの速度
    * @param {color} colorVal テキストの色
    * @param {number} size テキストのサイズ
-   * @param {string} direction スクロール方向 ('left' または 'right')
+   * @param {boolean} reverseScroll スクロールの方向（trueなら逆方向）
    */
-  constructor(text, y, speed, colorVal, size, direction = 'left') {
+  constructor(text, y, speed, colorVal, size, reverseScroll = false) {
     this.text = text;
     this.baseY = y;
+    this.y = y;
     this.speed = speed;
     this.colorVal = colorVal;
     this.size = size;
-    this.direction = direction;
+    this.reverseScroll = reverseScroll;
     
-    // フォントをポイントに変換（ベクター形式）: 一度だけ実行
+    // フォントをポイントに変換（ベクター形式）
     this.points = font.textToPoints(this.text, 0, 0, this.size, { sampleFactor: 0.7, simplifyThreshold: 0 });
     
     // テキストの幅を取得
-    let bounds = font.textBounds(this.text, 0, 0, this.size);
-    this.textWidthValue = bounds.w;
+    this.textWidthValue = this.getTextWidth();
     
-    // 初期位置を設定
-    if (this.direction === 'left') {
-      this.x = -this.textWidthValue;
-    } else {
-      this.x = width;
-    }
-    
+    this.x = 0; // テキストの初期X位置
     this.gap = 200; // テキスト間のギャップ
     
     // 各ドットの状態を管理（点灯/消灯）
@@ -217,25 +207,31 @@ class ScrollingText {
   }
 
   /**
+   * テキストの幅を取得するメソッド
+   * @returns {number} テキストの幅
+   */
+  getTextWidth() {
+    let bounds = font.textBounds(this.text, 0, 0, this.size);
+    return bounds.w;
+  }
+
+  /**
    * テキストの位置を更新するメソッド
    * @param {number} noiseOffset ノイズのオフセット値
    */
   update(noiseOffset) {
-    // スクロール方向に応じて位置を更新
-    if (this.direction === 'left') {
+    if (this.reverseScroll) {
+      // 逆方向にスクロール
       this.x += this.speed;
-      if (this.x > width + this.gap) {
-        this.x = -this.textWidthValue;
-      }
+      if (this.x > (this.textWidthValue + this.gap)) this.x = 0;
     } else {
+      // 通常方向にスクロール
       this.x -= this.speed;
-      if (this.x < -this.textWidthValue - this.gap) {
-        this.x = width;
-      }
+      if (this.x < -(this.textWidthValue + this.gap)) this.x = 0;
     }
     
     // ノイズを使ってY座標を揺らす
-    this.currentY = this.baseY + map(noise(noiseOffset), 0, 1, -3, 3);
+    this.y = this.baseY + map(noise(noiseOffset), 0, 1, -3, 3);
     
     // ドットの点灯・消灯をランダムに変更
     this.dots.forEach(dot => { if (random(1) < 0.02) dot.on = !dot.on; });
@@ -246,15 +242,19 @@ class ScrollingText {
    */
   display() {
     push();
-    translate(this.x, this.currentY);
+    translate(this.x, this.y);
     fill(this.colorVal);
     noStroke();
     // 点灯しているドットを描画
-    for (let dot of this.dots) {
-      if (dot.on) {
-        ellipse(dot.x, dot.y, 3, 3);
-      }
-    }
+    for (let dot of this.dots) if (dot.on) ellipse(dot.x, dot.y, 3, 3);
+    pop();
+
+    push();
+    // ギャップ分だけ位置をずらしてもう一つテキストを描画（ループ効果）
+    translate(this.x + (this.reverseScroll ? -(this.textWidthValue + this.gap) : (this.textWidthValue + this.gap)), this.y);
+    fill(this.colorVal);
+    noStroke();
+    for (let dot of this.dots) if (dot.on) ellipse(dot.x, dot.y, 3, 3);
     pop();
   }
 }
@@ -268,8 +268,6 @@ function preload() {
   img = loadImage(imgNames[imgIndex], () => {
     imgLoaded = true;
     aspectRatio = img.width / img.height; // アスペクト比を計算
-    // 有効ピクセルの事前計算
-    computeValidPixels();
   }, () => { console.error('Failed to load the image.'); });
 
   // ロゴ画像をロード
@@ -282,34 +280,6 @@ function preload() {
     () => { console.log('Font loaded successfully.'); },
     () => { console.error('Failed to load the font.'); }
   );
-}
-
-/**
- * computeValidPixels関数
- * 画像のピクセルデータから有効なピクセルを事前に計算して保存
- */
-function computeValidPixels() {
-  if (img && imgLoaded) {
-    img.loadPixels();
-    validPixels = []; // リセット
-    for (let y = 0; y < img.height; y++) {
-      for (let x = 0; x < img.width; x++) {
-        let index = (x + y * img.width) * 4;
-        let a = img.pixels[index + 3];
-        if (a >= 10) { // 不透明ピクセルのみ
-          let r = img.pixels[index];
-          let g = img.pixels[index + 1];
-          let b = img.pixels[index + 2];
-          let col = color(r, g, b);
-          let br = brightness(col);
-          let s = saturation(col);
-          s = min(s * layerSaturationScale[imgIndex], 255);
-          br = min(br * layerBrightnessScale[imgIndex], 255);
-          validPixels.push({x, y, brightness: br, saturation: s});
-        }
-      }
-    }
-  }
 }
 
 /**
@@ -336,7 +306,7 @@ function setup() {
     2, 
     color(topTextColor), 
     textSizeTop, 
-    'left' // 左から右へスクロール
+    false
   );
 
   bottomScrollingText = new ScrollingText(
@@ -345,7 +315,7 @@ function setup() {
     2, 
     color(bottomTextColor), 
     textSizeBottom, 
-    'right' // 右から左へスクロール
+    true
   );
 
   // インストラクションのセットアップ
@@ -429,7 +399,7 @@ function windowResized() {
     2, 
     color(topTextColor), 
     textSizeTop, 
-    'left' // 左から右へスクロール
+    false
   );
 
   bottomScrollingText = new ScrollingText(
@@ -438,7 +408,7 @@ function windowResized() {
     2, 
     color(bottomTextColor), 
     textSizeBottom, 
-    'right' // 右から左へスクロール
+    true
   );
 
   // インストラクションのセットアップを再実行
@@ -484,13 +454,38 @@ function draw() {
     textNoiseOffsetTop += 0.01;
     textNoiseOffsetBottom += 0.01;
 
-    // 上部のスクロールテキストを更新・表示
-    topScrollingText.update(textNoiseOffsetTop);
-    topScrollingText.display();
+    // 上部のスクロールテキストをクリッピング領域内で更新・表示
+    push();
+    let ctx = drawingContext;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(artOriginX, artOriginY - topAreaHeight, artWidth, topAreaHeight);
+    ctx.clip(); // クリッピング領域を設定
+    topScrollingText.update(textNoiseOffsetTop); // テキストの位置を更新
+    topScrollingText.display(); // テキストを表示
+    ctx.restore();
+    pop();
 
-    // 下部のスクロールテキストを更新・表示
-    bottomScrollingText.update(textNoiseOffsetBottom);
-    bottomScrollingText.display();
+    // 下部エリアの黒い矩形を描画（テキスト背景用）
+    noStroke();
+    fill(0);
+    rect(artOriginX, artOriginY + artHeight, artWidth, bottomAreaHeight);
+
+    // 下部スクロールテキストのY座標を設定
+    bottomScrollingText.baseY = artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5;
+    bottomScrollingText.y = bottomScrollingText.baseY;
+
+    // 下部のスクロールテキストをクリッピング領域内で更新・表示
+    push();
+    ctx = drawingContext;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(artOriginX, artOriginY + artHeight, artWidth, bottomAreaHeight);
+    ctx.clip(); // クリッピング領域を設定
+    bottomScrollingText.update(textNoiseOffsetBottom); // テキストの位置を更新
+    bottomScrollingText.display(); // テキストを表示
+    ctx.restore();
+    pop();
 
     // フィルターが適用されていなければ適用
     if (!filterApplied) {
@@ -616,15 +611,36 @@ function drawBrushArt() {
     hueBase = (hueBase + mouseSpeed * 0.5) % 255;
   }
 
+  let noiseScale = 0.001; // ノイズのスケール
   let strokesDrawn = 0; // 描画されたストロークの数
 
   // フレームごとにストロークを描画
-  for (let i = 0; i < currentStrokesPerFrame; i++) {
-    // 有効ピクセルからランダムに選択
-    let pixel = random(validPixels);
-    if (!pixel) continue; // 有効ピクセルが存在しない場合スキップ
+  for (let i = 0; i < currentStrokesPerFrame; i++) { // 修正: strokesPerFrame -> currentStrokesPerFrame
+    let nx = random(brushLayer.width); // ブラシレイヤーのランダムなX位置
+    let ny = random(brushLayer.height); // ブラシレイヤーのランダムなY位置
+    let nVal = noise(nx * noiseScale, ny * noiseScale, frameCount * 0.0005); // ノイズ値を取得
 
-    let {x, y, brightness: br, saturation: s} = pixel;
+    // ノイズ値が低い場合はストロークをスキップ
+    if (nVal < 0.05) continue;
+
+    // アートレイヤー上の対応するピクセルを取得
+    let x = int(map(nx, 0, brushLayer.width, 0, img.width));
+    let y = int(map(ny, 0, brushLayer.height, 0, img.height));
+    let index = (x + y * img.width) * 4; // ピクセルデータのインデックス
+
+    let r = img.pixels[index];
+    let g = img.pixels[index + 1];
+    let b = img.pixels[index + 2]; 
+    let a = img.pixels[index + 3];
+
+    // 透明なピクセルはスキップ
+    if (a < 10) continue;
+
+    let col = color(r, g, b); // ピクセルの色を取得
+    let br = brightness(col); // 明度を取得
+    let s = saturation(col); // 彩度を取得
+    s = min(s * layerSaturationScale[imgIndex], 255); // 彩度をスケール
+    br = min(br * layerBrightnessScale[imgIndex], 255); // 明度をスケール
 
     let strokeColor;
     // 画像インデックスごとのストロークカラーを決定
@@ -656,10 +672,7 @@ function drawBrushArt() {
 
     // ブラシレイヤーにストロークを描画
     brushLayer.push();
-    // マッピングされた座標をキャンバス上の座標に変換
-    let mappedX = map(x, 0, img.width, 0, artWidth);
-    let mappedY = map(y, 0, img.height, 0, artHeight);
-    brushLayer.translate(mappedX, mappedY); // ストロークの位置に移動
+    brushLayer.translate(nx, ny); // ストロークの位置に移動
     brushLayer.rotate(prevAngle); // ストロークの角度を回転
     let strokeLength = map(mouseSpeed, 0, 50, 10, 50) * brushScale; // ストロークの長さを計算
     let strokeType = int(random(3)); // ストロークのタイプをランダムに選択
@@ -672,11 +685,26 @@ function drawBrushArt() {
   }
 
   // このフレームで一度もストロークが描かれなかった場合、
-  // 有効ピクセルから1本だけ強制的に描く
-  if (strokesDrawn === 0 && imgLoaded && validPixels.length > 0) {
-    let pixel = random(validPixels);
-    if (pixel) {
-      let {x, y, brightness: br, saturation: s} = pixel;
+  // 不透明ピクセルを持つランダムな点を選んで1本だけ強制的に描く
+  if (strokesDrawn === 0 && imgLoaded) {
+    for (let tries = 0; tries < 1000; tries++) {
+      let nx = random(brushLayer.width);
+      let ny = random(brushLayer.height);
+      let x = int(map(nx, 0, brushLayer.width, 0, img.width));
+      let y = int(map(ny, 0, brushLayer.height, 0, img.height));
+      let index = (x + y * img.width) * 4;
+
+      let r = img.pixels[index];
+      let g = img.pixels[index + 1];
+      let b = img.pixels[index + 2]; 
+      let a = img.pixels[index + 3];
+      if (a < 10) continue; // 不透明ピクセルを探す
+
+      let col = color(r, g, b);
+      let br = brightness(col);
+      let s = saturation(col);
+      s = min(s * layerSaturationScale[imgIndex], 255); 
+      br = min(br * layerBrightnessScale[imgIndex], 255);
 
       let strokeColor;
       // 画像インデックスごとのストロークカラーを決定
@@ -706,10 +734,7 @@ function drawBrushArt() {
 
       // ブラシレイヤーに強制的にストロークを描画
       brushLayer.push();
-      // マッピングされた座標をキャンバス上の座標に変換
-      let mappedX = map(x, 0, img.width, 0, artWidth);
-      let mappedY = map(y, 0, img.height, 0, artHeight);
-      brushLayer.translate(mappedX, mappedY); // ストロークの位置に移動
+      brushLayer.translate(nx, ny); // ストロークの位置に移動
       brushLayer.rotate(prevAngle); // ストロークの角度を回転
       let strokeLengthForced = map(mouseSpeed, 0, 50, 10, 50) * brushScale; // ストロークの長さを計算
       let strokeTypeForced = int(random(3)); // ストロークのタイプをランダムに選択
@@ -717,6 +742,7 @@ function drawBrushArt() {
       else if (strokeTypeForced === 1) brushMediumStroke(strokeColor, strokeLengthForced); // 中くらいのストローク
       else brushLargeStroke(strokeColor, strokeLengthForced); // 大きいストローク
       brushLayer.pop();
+      break; // 1本描いたらループを終了
     }
   }
 
@@ -732,14 +758,13 @@ function drawBrushArt() {
  */
 function drawFilterOverArt(artHeight) {
   let filterBuffer = createGraphics(artWidth, artHeight); // フィルターバッファを作成
-  filterBuffer.colorMode(HSB, 255);
   filterBuffer.clear(); // バッファをクリア
   if (!filterHeight) filterHeight = artHeight * 0.1; // フィルターの高さを設定（初回のみ）
 
   // フィルター効果を描画
-  filterBuffer.noStroke();
   for (let y = artHeight - filterHeight; y < artHeight; y++) {
     let alpha = map(y, artHeight - filterHeight, artHeight, 0, 55); // 透明度を計算
+    filterBuffer.noStroke();
     filterBuffer.fill(0, alpha); // 黒色と透明度を設定
     filterBuffer.rect(0, y, artWidth, 1); // 1ピクセル幅のラインを描画
   }
@@ -916,9 +941,6 @@ function mousePressed() {
       img.loadPixels(); // ピクセルデータをロード
       imgLoaded = true; // 画像ロードフラグを設定
 
-      // 有効ピクセルの再計算
-      computeValidPixels();
-
       let oldBrush = brushLayer.get(); // 既存のブラシレイヤーを取得
       brushLayer.resizeCanvas(artWidth, artHeight); // ブラシレイヤーのサイズをリサイズ
       brushLayer.image(oldBrush, 0, 0, artWidth, artHeight); // 既存のブラシを再描画
@@ -940,7 +962,7 @@ function mousePressed() {
         2, 
         color(topTextColor), 
         textSizeTop, 
-        'left' // 左から右へスクロール
+        false
       );
 
       bottomScrollingText = new ScrollingText(
@@ -949,7 +971,7 @@ function mousePressed() {
         2, 
         color(bottomTextColor), 
         textSizeBottom, 
-        'right' // 右から左へスクロール
+        true
       );
 
       layerFrameCount = 0; // フレームカウントをリセット
