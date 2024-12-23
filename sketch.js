@@ -18,7 +18,7 @@ let img;
 let imgLoaded = false;
 
 // フレームごとのストローク量（ブラシの動きの密度）
-let baseStrokesPerFrame = 600; // 基本のストローク数
+let baseStrokesPerFrame = 800; // 基本のストローク数
 let currentStrokesPerFrame = baseStrokesPerFrame; // 現在のストローク数
 
 // 色相の基準値
@@ -59,8 +59,8 @@ let prevAngle = 0;
 let font;
 
 // 上部と下部のスクロールテキストオブジェクト
-let topScrollingTextLeft, topScrollingTextRight;
-let bottomScrollingTextLeft, bottomScrollingTextRight;
+let topScrollingText;
+let bottomScrollingText;
 
 // 上部と下部のテキストカラー（HSB形式）
 let topTextColor = [255, 155, 205];
@@ -176,7 +176,7 @@ let validPixels = []; // 配列に {x, y, brightness, saturation} を格納
 /**
  * ScrollingTextクラス
  * スクロールするテキストを管理するクラス
- * 左右両方向からスクロールするために2つのインスタンスを使用
+ * direction パラメータで 'left' または 'right' を指定
  */
 class ScrollingText {
   /**
@@ -289,23 +289,24 @@ function preload() {
  * 画像のピクセルデータから有効なピクセルを事前に計算して保存
  */
 function computeValidPixels() {
-  if (img && img.loadedPixels) return; // 既に計算済みならスキップ
-  img.loadPixels();
-  validPixels = []; // リセット
-  for (let y = 0; y < img.height; y++) {
-    for (let x = 0; x < img.width; x++) {
-      let index = (x + y * img.width) * 4;
-      let a = img.pixels[index + 3];
-      if (a >= 10) { // 不透明ピクセルのみ
-        let r = img.pixels[index];
-        let g = img.pixels[index + 1];
-        let b = img.pixels[index + 2];
-        let col = color(r, g, b);
-        let br = brightness(col);
-        let s = saturation(col);
-        s = min(s * layerSaturationScale[imgIndex], 255);
-        br = min(br * layerBrightnessScale[imgIndex], 255);
-        validPixels.push({x, y, brightness: br, saturation: s});
+  if (img && imgLoaded) {
+    img.loadPixels();
+    validPixels = []; // リセット
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        let index = (x + y * img.width) * 4;
+        let a = img.pixels[index + 3];
+        if (a >= 10) { // 不透明ピクセルのみ
+          let r = img.pixels[index];
+          let g = img.pixels[index + 1];
+          let b = img.pixels[index + 2];
+          let col = color(r, g, b);
+          let br = brightness(col);
+          let s = saturation(col);
+          s = min(s * layerSaturationScale[imgIndex], 255);
+          br = min(br * layerBrightnessScale[imgIndex], 255);
+          validPixels.push({x, y, brightness: br, saturation: s});
+        }
       }
     }
   }
@@ -329,40 +330,22 @@ function setup() {
   if (imgLoaded) img.loadPixels(); // 画像のピクセルデータをロード
 
   // 上部と下部のスクロールテキストの初期化
-  topScrollingTextLeft = new ScrollingText(
+  topScrollingText = new ScrollingText(
     "HAPPY NEW YEAR 2025", 
     artOriginY - topAreaHeight + topAreaHeight / 2 + textSizeTop / 3, 
     2, 
     color(topTextColor), 
     textSizeTop, 
-    'left'
+    'left' // 左から右へスクロール
   );
 
-  topScrollingTextRight = new ScrollingText(
-    "HAPPY NEW YEAR 2025", 
-    artOriginY - topAreaHeight + topAreaHeight / 2 + textSizeTop / 3, 
-    2, 
-    color(topTextColor), 
-    textSizeTop, 
-    'right'
-  );
-
-  bottomScrollingTextLeft = new ScrollingText(
+  bottomScrollingText = new ScrollingText(
     "Find your core, Aim for more", 
     artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5, 
     2, 
     color(bottomTextColor), 
     textSizeBottom, 
-    'left'
-  );
-
-  bottomScrollingTextRight = new ScrollingText(
-    "Find your core, Aim for more", 
-    artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5, 
-    2, 
-    color(bottomTextColor), 
-    textSizeBottom, 
-    'right'
+    'right' // 右から左へスクロール
   );
 
   // インストラクションのセットアップ
@@ -440,40 +423,22 @@ function windowResized() {
   }
 
   // スクロールテキストを再初期化
-  topScrollingTextLeft = new ScrollingText(
+  topScrollingText = new ScrollingText(
     "HAPPY NEW YEAR 2025", 
     artOriginY - topAreaHeight + topAreaHeight / 2 + textSizeTop / 3, 
     2, 
     color(topTextColor), 
     textSizeTop, 
-    'left'
+    'left' // 左から右へスクロール
   );
 
-  topScrollingTextRight = new ScrollingText(
-    "HAPPY NEW YEAR 2025", 
-    artOriginY - topAreaHeight + topAreaHeight / 2 + textSizeTop / 3, 
-    2, 
-    color(topTextColor), 
-    textSizeTop, 
-    'right'
-  );
-
-  bottomScrollingTextLeft = new ScrollingText(
+  bottomScrollingText = new ScrollingText(
     "Find your core, Aim for more", 
     artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5, 
     2, 
     color(bottomTextColor), 
     textSizeBottom, 
-    'left'
-  );
-
-  bottomScrollingTextRight = new ScrollingText(
-    "Find your core, Aim for more", 
-    artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5, 
-    2, 
-    color(bottomTextColor), 
-    textSizeBottom, 
-    'right'
+    'right' // 右から左へスクロール
   );
 
   // インストラクションのセットアップを再実行
@@ -520,23 +485,12 @@ function draw() {
     textNoiseOffsetBottom += 0.01;
 
     // 上部のスクロールテキストを更新・表示
-    topScrollingTextLeft.update(textNoiseOffsetTop);
-    topScrollingTextLeft.display();
+    topScrollingText.update(textNoiseOffsetTop);
+    topScrollingText.display();
 
-    topScrollingTextRight.update(textNoiseOffsetTop + 1000); // 違うオフセットで表示
-    topScrollingTextRight.display();
-
-    // 下部エリアの黒い矩形を描画（テキスト背景用）
-    noStroke();
-    fill(0);
-    rect(artOriginX, artOriginY + artHeight, artWidth, bottomAreaHeight);
-
-    // 下部スクロールテキストの更新・表示
-    bottomScrollingTextLeft.update(textNoiseOffsetBottom);
-    bottomScrollingTextLeft.display();
-
-    bottomScrollingTextRight.update(textNoiseOffsetBottom + 1000); // 違うオフセットで表示
-    bottomScrollingTextRight.display();
+    // 下部のスクロールテキストを更新・表示
+    bottomScrollingText.update(textNoiseOffsetBottom);
+    bottomScrollingText.display();
 
     // フィルターが適用されていなければ適用
     if (!filterApplied) {
@@ -638,8 +592,6 @@ function displayInstructions() {
  * 背景のグラデーションを描画する
  */
 function drawBackgroundGradient() {
-  // グラデーションの計算をループ内ではなく、バッファに描画してキャッシュする
-  // ただし、背景の色相が動的に変化するため、毎フレーム描画が必要
   for (let y = 0; y < height; y++) {
     let inter = y / height; // 画面の縦方向の割合を計算
     let h = (backgroundHueOffset + inter * 10) % 255; // 色相を計算
@@ -664,7 +616,6 @@ function drawBrushArt() {
     hueBase = (hueBase + mouseSpeed * 0.5) % 255;
   }
 
-  let noiseScale = 0.001; // ノイズのスケール
   let strokesDrawn = 0; // 描画されたストロークの数
 
   // フレームごとにストロークを描画
@@ -918,6 +869,21 @@ function brushLargeStroke(strokeColor, strokeLength) {
 }
 
 /**
+ * keyPressed関数
+ * キーが押されたときに呼ばれる
+ */
+function keyPressed() {
+  if (key === 'S' || key === 's') {
+    savingImage = true; // 画像保存フラグを設定
+    noLoop(); // 描画ループを停止
+    redraw(); // 一度だけ再描画
+    saveCanvas('myArt', 'png'); // キャンバスをPNG形式で保存
+    savingImage = false; // 画像保存フラグをリセット
+    loop(); // 描画ループを再開
+  }
+}
+
+/**
  * mousePressed関数
  * マウスがクリックされたときに呼ばれる
  */
@@ -962,64 +928,31 @@ function mousePressed() {
 
       // レイヤーに基づいてストローク数を更新
       if (imgIndex >= 2) { // レイヤー3と4
-        currentStrokesPerFrame = baseStrokesPerFrame * 2;
+        currentStrokesPerFrame = baseStrokesPerFrame * 4;
       } else { // レイヤー1と2
         currentStrokesPerFrame = baseStrokesPerFrame;
       }
 
       // スクロールテキストを再初期化
-      topScrollingTextLeft = new ScrollingText(
+      topScrollingText = new ScrollingText(
         "HAPPY NEW YEAR 2025", 
         artOriginY - topAreaHeight + topAreaHeight / 2 + textSizeTop / 3, 
         2, 
         color(topTextColor), 
         textSizeTop, 
-        'left'
+        'left' // 左から右へスクロール
       );
 
-      topScrollingTextRight = new ScrollingText(
-        "HAPPY NEW YEAR 2025", 
-        artOriginY - topAreaHeight + topAreaHeight / 2 + textSizeTop / 3, 
-        2, 
-        color(topTextColor), 
-        textSizeTop, 
-        'right'
-      );
-
-      bottomScrollingTextLeft = new ScrollingText(
+      bottomScrollingText = new ScrollingText(
         "Find your core, Aim for more", 
         artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5, 
         2, 
         color(bottomTextColor), 
         textSizeBottom, 
-        'left'
-      );
-
-      bottomScrollingTextRight = new ScrollingText(
-        "Find your core, Aim for more", 
-        artOriginY + artHeight + bottomAreaHeight / 2 + textSizeBottom / 3.5, 
-        2, 
-        color(bottomTextColor), 
-        textSizeBottom, 
-        'right'
+        'right' // 右から左へスクロール
       );
 
       layerFrameCount = 0; // フレームカウントをリセット
     }, () => { console.error('Failed to load the next image.'); });
-  }
-}
-
-/**
- * keyPressed関数
- * キーが押されたときに呼ばれる
- */
-function keyPressed() {
-  if (key === 'S' || key === 's') {
-    savingImage = true; // 画像保存フラグを設定
-    noLoop(); // 描画ループを停止
-    redraw(); // 一度だけ再描画
-    saveCanvas('myArt', 'png'); // キャンバスをPNG形式で保存
-    savingImage = false; // 画像保存フラグをリセット
-    loop(); // 描画ループを再開
   }
 }
