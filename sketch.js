@@ -18,7 +18,7 @@ let img;
 let imgLoaded = false;
 
 // フレームごとのストローク量（ブラシの動きの密度）
-let baseStrokesPerFrame = 1000; // 基本のストローク数
+let baseStrokesPerFrame = 600; // 基本のストローク数
 let currentStrokesPerFrame = baseStrokesPerFrame; // 現在のストローク数
 
 // 色相の基準値
@@ -658,11 +658,11 @@ function drawBrushArt() {
       strokeColor = (br > 128) ? color(0, 0, 255) : color(0, 0, 0); // 明るさに基づく色
     } else if (imgIndex === 2) {
       strokeColor = (br > 128) ? color(0, 0, 255) : color(blueColorForLayer3[0], blueColorForLayer3[1], blueColorForLayer3[2]); // 特定の青色
-    } else {
+    } else { // imgIndex === 3 (レイヤー4)
       if (br < 50) {
         strokeColor = color(0, 0, 0); // 黒色
       } else if (br > 220) {
-        continue; // 非常に明るい部分はスキップ
+        strokeColor = color(0, 0, 255); // 白色（HSB: hue=0, saturation=0, brightness=255）
       } else {
         let h = (hueBase + random(-hueRange, hueRange)) % 255;
         if (h < 0) h += 255;
@@ -720,10 +720,12 @@ function drawBrushArt() {
         strokeColor = (br > 128) ? color(0, 0, 255) : color(0, 0, 0);
       } else if (imgIndex === 2) {
         strokeColor = (br > 128) ? color(0, 0, 255) : color(blueColorForLayer3[0], blueColorForLayer3[1], blueColorForLayer3[2]);
-      } else {
-        if (br < 50) strokeColor = color(0, 0, 0);
-        else if (br > 220) continue;
-        else {
+      } else { // imgIndex === 3 (レイヤー4)
+        if (br < 50) {
+          strokeColor = color(0, 0, 0);
+        } else if (br > 220) {
+          strokeColor = color(0, 0, 255); // 白色
+        } else {
           let h = (hueBase + random(-hueRange, hueRange)) % 255;
           if (h < 0) h += 255;
           strokeColor = color(h, s, br);
@@ -892,6 +894,21 @@ function brushLargeStroke(strokeColor, strokeLength) {
 }
 
 /**
+ * keyPressed関数
+ * キーが押されたときに呼ばれる
+ */
+function keyPressed() {
+  if (key === 'S' || key === 's') {
+    savingImage = true; // 画像保存フラグを設定
+    noLoop(); // 描画ループを停止
+    redraw(); // 一度だけ再描画
+    saveCanvas('myArt', 'png'); // キャンバスをPNG形式で保存
+    savingImage = false; // 画像保存フラグをリセット
+    loop(); // 描画ループを再開
+  }
+}
+
+/**
  * mousePressed関数
  * マウスがクリックされたときに呼ばれる
  */
@@ -906,6 +923,11 @@ function mousePressed() {
     if (mouseX >= instructionButtonX && mouseX <= instructionButtonX + instructionButtonW &&
         mouseY >= instructionButtonY && mouseY <= instructionButtonY + instructionButtonH) {
       showInstructions = !showInstructions; // インストラクションの表示/非表示を切り替え
+      return;
+    }
+
+    // インストラクション画面が表示されている場合はレイヤーの切り替えを行わない
+    if (showInstructions) {
       return;
     }
 
@@ -928,7 +950,7 @@ function mousePressed() {
 
       // レイヤーに基づいてストローク数を更新
       if (imgIndex >= 2) { // レイヤー3と4
-        currentStrokesPerFrame = baseStrokesPerFrame * 3;
+        currentStrokesPerFrame = baseStrokesPerFrame * 4;
       } else { // レイヤー1と2
         currentStrokesPerFrame = baseStrokesPerFrame;
       }
@@ -954,20 +976,5 @@ function mousePressed() {
 
       layerFrameCount = 0; // フレームカウントをリセット
     }, () => { console.error('Failed to load the next image.'); });
-  }
-}
-
-/**
- * keyPressed関数
- * キーが押されたときに呼ばれる
- */
-function keyPressed() {
-  if (key === 'S' || key === 's') {
-    savingImage = true; // 画像保存フラグを設定
-    noLoop(); // 描画ループを停止
-    redraw(); // 一度だけ再描画
-    saveCanvas('myArt', 'png'); // キャンバスをPNG形式で保存
-    savingImage = false; // 画像保存フラグをリセット
-    loop(); // 描画ループを再開
   }
 }
