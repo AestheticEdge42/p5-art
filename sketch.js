@@ -830,7 +830,7 @@ function displayLayerInfo() {
   push();
   textAlign(CENTER, CENTER);
   textSize(15);
-  let messageY = barY + 70;
+  let messageY = barY + 50;
   if (progress >= 100) {
     rainbowHue = (rainbowHue + 4) % 255;
     fill(rainbowHue, 155, 255);
