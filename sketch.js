@@ -101,7 +101,7 @@ let maxLayerFrames = 700;
 
 // レイヤー情報ボックスのサイズと位置
 let layerInfoWidth = 300;
-let layerInfoHeight = 220; // Instructionボタン分追加
+let layerInfoHeight = 200; // Instructionボタン分追加
 let layerInfoX = 40;
 let layerInfoY = 50;
 
@@ -361,7 +361,7 @@ function calculateResponsiveSizes() {
     logoHeight = logoWidth;
   }
   // 例: 左端から10pxに設定
-  logoMarginX = 10;
+  logoMarginX = 100;
   logoMarginY = artHeight * 0.05; 
 
   // レイヤー情報ボックスの位置を右側に設定
@@ -830,7 +830,7 @@ function displayLayerInfo() {
   push();
   textAlign(CENTER, CENTER);
   textSize(15);
-  let messageY = barY + 40;
+  let messageY = barY + 70;
   if (progress >= 100) {
     rainbowHue = (rainbowHue + 4) % 255;
     fill(rainbowHue, 155, 255);
