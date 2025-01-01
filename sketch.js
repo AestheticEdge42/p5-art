@@ -101,7 +101,7 @@ let maxLayerFrames = 700;
 
 // レイヤー情報ボックスのサイズと位置
 let layerInfoWidth = 300;
-let layerInfoHeight = 160; // Instructionボタン分追加
+let layerInfoHeight = 220; // Instructionボタン分追加
 let layerInfoX = 40;
 let layerInfoY = 50;
 
@@ -360,7 +360,8 @@ function calculateResponsiveSizes() {
   } else {
     logoHeight = logoWidth;
   }
-  logoMarginX = artWidth * 0.05; 
+  // 例: 左端から10pxに設定
+  logoMarginX = 10;
   logoMarginY = artHeight * 0.05; 
 
   // レイヤー情報ボックスの位置を右側に設定
@@ -778,11 +779,16 @@ function drawFilterOverArt(artHeight) {
  */
 function drawLogoOnArt(artHeight) {
   if (logo && logo.width !== 0 && logo.height !== 0) {
-    let xPosition = artOriginX + artWidth - logoWidth - logoMarginX; // ロゴのX位置を計算
-    let yPosition = artOriginY + artHeight - logoHeight - logoMarginY; // ロゴのY位置を計算
+    // 変更前: 右下
+    // let xPosition = artOriginX + artWidth - logoWidth - logoMarginX;
+    
+    // 変更後: 左下
+    let xPosition = artOriginX + logoMarginX;
+    let yPosition = artOriginY + artHeight - logoHeight - logoMarginY; // Y位置はそのまま
     image(logo, xPosition, yPosition, logoWidth, logoHeight); // ロゴを描画
   }
 }
+
 
 /**
  * displayLayerInfo関数
